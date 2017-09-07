@@ -1,1 +1,8 @@
 julia 0.6
+
+StatPlots
+Plots 0.12.4
+StatsBase
+KernelDensity
+Loess
+IndexedTables

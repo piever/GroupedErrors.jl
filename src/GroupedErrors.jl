@@ -1,5 +1,11 @@
 module GroupedErrors
 
-# package code goes here
+#import StatPlots
+import RecipesBase, Plots, StatPlots
+import Loess, KernelDensity
+using IndexedTables
 
-end # module
+include("indexedtable.jl")
+include("groupederror.jl")
+
+end
