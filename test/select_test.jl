@@ -19,7 +19,7 @@ s = @given i in school begin
     groupby(i.Sx)
     across(i.School)
     x(i.SSS)
-    y(i.MAch)
+    y(i.MAch, span = 0.9)
     plot(;)
 end
 using StatPlots

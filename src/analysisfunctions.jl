@@ -7,14 +7,15 @@ Apply loess regression, training the regressor with `x` and `y` and
 predicting `xaxis`
 """
 function _locreg!(::Val{:continuous}, xtable, t; kwargs...)
-    xtable.data .= NaN
     x, y = keys(t, 1), t.data
     within = filter(t -> Plots.ignorenan_minimum(x)<= t <= Plots.ignorenan_maximum(x), keys(xtable,1))
-    if length(within) >0
+    if length(within) > 0
         model = Loess.loess(convert(Vector{Float64},x),convert(Vector{Float64},y); kwargs...)
-        xtable[within] .= Loess.predict(model,within)
+        prediction = Loess.predict(model,within)
+    else
+        prediction = Float64[]
     end
-    return xtable
+    return IndexedTable(within, prediction, presorted = true)
 end
 
 
