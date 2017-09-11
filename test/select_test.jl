@@ -1,23 +1,8 @@
-using DataFrames, RDatasets, IndexedTables, IterableTables
+using DataFrames, RDatasets, IndexedTables, IterableTables, StatPlots
 school = RDatasets.dataset("mlmRev","Hsb82")
 kw = Dict{Symbol,Any}(:f => :density, :axis_type => :binned)
 table = IndexedTable(Columns(school[:Sx], school[:School], school[:SSS]),
     fill(NaN, size(school,1)))
-
-s = group_apply(table, f = :density,
-    axis_type = :binned, nbins = 20)
-s
-using Plots
-#plot(s)
-ee(::Any, e) = 2
-ee(1,2)
-f(x,y,z) = y +z
-Val{:discrete}()::Val{:discrete}
-g = (args...) -> f(1, args...)
-g(2,3)
-
-:Protocol in [1, 2]
-
 
 s = @given i in school begin
     where(i.Minrty == "Yes")
@@ -25,8 +10,8 @@ s = @given i in school begin
     #xsummarize(mean)
     #ysummarize(std)
     across(i.School)
-    x(i.MAch)
-    y(:density)
+    x(i.MAch, :pointbypoint)
+    y(i.SSS)
     scatter()
 end
 

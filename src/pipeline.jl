@@ -3,37 +3,40 @@ struct Table2Process{T<:IndexedTable}
     kw::Dict{Symbol, Any}
 end
 
-function pipeline!(t::Table2Process)
-    t.kw[:axis_type] = get(t.kw, :axis_type, :auto)
-    t.kw[:summarize] = get(t.kw, :summarize, (mean,sem))
-    t.kw[:compute_axis] = get(t.kw, :compute_axis, :auto)
-    t.kw[:fkwargs] = get(t.kw, :fkwargs, [])
-    process_axis_type!(t)
+function pipeline!(cols, kw)
+    kw[:axis_type] = get(kw, :axis_type, :auto)
+    kw[:summarize] = get(kw, :summarize, (mean,sem))
+    kw[:compute_axis] = get(kw, :compute_axis, :auto)
+    kw[:fkwargs] = get(kw, :fkwargs, [])
+    t = process_axis_type!(cols, kw)
     process_function!(t)
     return Table2Process(_group_apply(t), t.kw)
 end
 
-function process_axis_type!(t::Table2Process)
-    x, y = t.table.index.columns[end], t.table.data
-    at = t.kw[:axis_type]
+function process_axis_type!(cols, kw)
+    x, y = cols[end-1:end]
+    at = kw[:axis_type]
+    (at == :pointbypoint) &&return Table2Process(IndexedTable(Columns(cols[1:end-2]...), Columns(x, y)), kw)
+
     if !(eltype(x)<:Real)
-        (t.kw[:axis_type] in [:discrete, :auto]) || warn("Changing to discrete axis, x values are not real numbers!")
-        t.kw[:axis_type] = :discrete
+        (kw[:axis_type] in [:discrete, :auto]) || warn("Changing to discrete axis, x values are not real numbers!")
+        kw[:axis_type] = :discrete
     end
     bin_width = 1.0
-    if t.kw[:axis_type] == :binned
-        nbins = get(t.kw, :nbins, 30)
+    if kw[:axis_type] == :binned
+        nbins = get(kw, :nbins, 30)
         edges = linspace(extrema(x)..., nbins+1)
         middles = (edges[2:end] .+ edges[1:end-1])./2
         indices = [searchsortedfirst(edges[2:end], s) for s in x]
         x .= middles[indices]
         bin_width = step(edges)
-        t.kw[:axis_type] = :discrete
+        kw[:axis_type] = :discrete
     end
-    (t.kw[:axis_type] == :auto) && (t.kw[:axis_type] = :continuous)
-    t.kw[:axis_type] in [:discrete, :continuous] ||
+    (kw[:axis_type] == :auto) && (kw[:axis_type] = :continuous)
+    kw[:axis_type] in [:discrete, :continuous] ||
         error("Axis type $(t.kw[:axis_type]) is not supported")
     all(isnan.(y)) && (y .= bin_width)
+    Table2Process(IndexedTable(cols...), kw)
 end
 
 function process_function!(t::Table2Process)
@@ -57,7 +60,7 @@ end
 function _group_apply(t::Table2Process)
     n = length(t.table.index.columns)-1
     if t.kw[:axis_type] == :pointbypoint
-        return select(aggregate_vec(v -> (mean(t->t[1], v), mean(t->t[2], v)), s),(1:n)...)
+        return select(aggregate_vec(v -> (mean(i->i[1], v), mean(i->i[2], v)), t.table),(1:n)...)
     else
         g = mapslices(t.table, [n, n+1]) do tt
             xaxis = get_axis(keys(tt, n+1), t.kw[:axis_type], t.kw[:compute_axis])
@@ -68,7 +71,4 @@ function _group_apply(t::Table2Process)
     end
 end
 
-function group_apply(df::IndexedTable; kwargs...)
-    t = Table2Process(copy(df), Dict{Symbol,Any}(kwargs))
-    pipeline!(t)
-end
+group_apply(cols; kwargs...) = pipeline!(cols, Dict{Symbol,Any}(kwargs))

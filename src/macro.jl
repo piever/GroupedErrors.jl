@@ -44,7 +44,7 @@ function helper(a, b)
     f2 = Expr(:->, i, Expr(:tuple, groupfs..., acrossf, xf, yf))
     selector =  Expr(:call, :(GroupedErrors.Selector), f1, f2)
     plottable_table = Expr(:call, :(GroupedErrors.group_apply),
-        :(GroupedErrors.IndexedTable(GroupedErrors.get_cols($df, $selector)...)),
+        :(GroupedErrors.get_cols($df, $selector)),
         kwargs..., Expr(:kw, :fkwargs, Expr(:call, :(GroupedErrors.store_kws), fkwargs...)))
     if @capture(args[end], fun_(as__; kws__)) && fun != :y
         return Expr(:call, :(GroupedErrors.plot_helper), plottable_table, fun, as..., kws...)
