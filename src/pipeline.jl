@@ -7,6 +7,7 @@ function pipeline!(cols, kw)
     kw[:axis_type] = get(kw, :axis_type, :auto)
     kw[:summarize] = get(kw, :summarize, (mean,sem))
     kw[:compute_axis] = get(kw, :compute_axis, :auto)
+    kw[:acrossall] = get(kw, :acrossall, false)
     kw[:fkwargs] = get(kw, :fkwargs, [])
     t = process_axis_type!(cols, kw)
     process_function!(t)
@@ -15,8 +16,9 @@ end
 
 function process_axis_type!(cols, kw)
     x, y = cols[end-1:end]
+    kw[:acrossall] && (cols[end-2] .= collect(1.:Float64(length(cols[end-2]))))
     at = kw[:axis_type]
-    (at == :pointbypoint) &&return Table2Process(IndexedTable(Columns(cols[1:end-2]...), Columns(x, y)), kw)
+    (at == :pointbypoint) && return Table2Process(IndexedTable(Columns(cols[1:end-2]...), Columns(x, y)), kw)
 
     if !(eltype(x)<:Real)
         (kw[:axis_type] in [:discrete, :auto]) || warn("Changing to discrete axis, x values are not real numbers!")
@@ -34,7 +36,7 @@ function process_axis_type!(cols, kw)
     end
     (kw[:axis_type] == :auto) && (kw[:axis_type] = :continuous)
     kw[:axis_type] in [:discrete, :continuous] ||
-        error("Axis type $(t.kw[:axis_type]) is not supported")
+        error("Axis type $(kw[:axis_type]) is not supported")
     all(isnan.(y)) && (y .= bin_width)
     Table2Process(IndexedTable(cols...), kw)
 end

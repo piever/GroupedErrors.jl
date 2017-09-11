@@ -14,7 +14,8 @@ s = @given i in school begin
     y(i.SSS)
     scatter()
 end
-
+@capture(Expr(:call, :across, :(:all)), fun_(var_))
+var == Expr(:quote, :all)
 
 
 

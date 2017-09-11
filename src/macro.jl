@@ -21,7 +21,11 @@ function helper(a, b)
         elseif @capture(arg, fun_(as__)) && fun == :groupby
             groupfs = as
         elseif @capture(arg, fun_(var_)) && fun == :across
-            acrossf = var
+            if var == Expr(:quote, :all)
+                push!(kwargs, Expr(:kw, :acrossall, true))
+            else
+                acrossf = var
+            end
         elseif @capture(arg, fun_(var_, others__)) && fun == :x
             xf = var
             kws = [:axis_type, :nbins]
