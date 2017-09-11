@@ -46,24 +46,29 @@ function helper(a, b)
     plottable_table = Expr(:call, :(GroupedErrors.group_apply),
         :(GroupedErrors.IndexedTable(GroupedErrors.get_cols($df, $selector)...)),
         kwargs..., Expr(:kw, :fkwargs, Expr(:call, :(GroupedErrors.store_kws), fkwargs...)))
-    # if @capture(args[end], fun_(as__; kws__)) && fun != :y
-    #     return Expr(:call, plottable_table, :(GroupedErrors.plot_helper), as...; kws...)
-    if @capture(args[end], fun_(as__)) && fun != :y
+    if @capture(args[end], fun_(as__; kws__)) && fun != :y
+        return Expr(:call, :(GroupedErrors.plot_helper), plottable_table, fun, as..., kws...)
+    elseif @capture(args[end], fun_(as__)) && fun != :y
         return Expr(:call, :(GroupedErrors.plot_helper), plottable_table, fun, as...)
     else
         return plottable_table
     end
 end
 
-plot_helper(s::IndexedTable, err_style, f::Function, args...; kwargs...) =
-    plot_helper(Table2Process(s, Dict{Symbol, Any}()), err_style, f, args...; kwargs...)
-
 function plot_helper(t::Table2Process, f::Function, args...; kwargs...)
     s = t.table
-    x = s.index.columns[end]
-    y = isa(s.data, Columns) ? s.data.columns[1] : s.data
-    group = s.index.columns[1:end-1]
-    err = (isa(s.data, Columns) && (length(s.data.columns) > 1)) ? s.data.columns[2] : nothing
-    err_style = get(t.kw, :axis_type, :discrete) == :discrete ? :err : :ribbon
-    f(args..., x, y; group = group, (err_style, err), kwargs...)
+    axis_type = t.kw[:axis_type]
+    if axis_type == :pointbypoint
+        x = s.data.columns[1]
+        y = s.data.columns[2]
+        group = s.index.columns
+        f(args..., x, y; group = group, kwargs...)
+    else
+        x = s.index.columns[end]
+        y = isa(s.data, Columns) ? s.data.columns[1] : s.data
+        group = s.index.columns[1:end-1]
+        err = (isa(s.data, Columns) && (length(s.data.columns) > 1)) ? s.data.columns[2] : nothing
+        err_style = axis_type == :discrete ? :err : :ribbon
+        f(args..., x, y; group = group, (err_style, err), kwargs...)
+    end
 end

@@ -56,12 +56,16 @@ end
 
 function _group_apply(t::Table2Process)
     n = length(t.table.index.columns)-1
-    g = mapslices(t.table, [n, n+1]) do tt
-        xaxis = get_axis(keys(tt, n+1), t.kw[:axis_type], t.kw[:compute_axis])
-        xtable = IndexedTable(collect(xaxis), fill(0.0, length(xaxis)), presorted = true)
-        get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xtable, select(tt, n, n+1))
+    if t.kw[:axis_type] == :pointbypoint
+        return select(aggregate_vec(v -> (mean(t->t[1], v), mean(t->t[2], v)), s),(1:n)...)
+    else
+        g = mapslices(t.table, [n, n+1]) do tt
+            xaxis = get_axis(keys(tt, n+1), t.kw[:axis_type], t.kw[:compute_axis])
+            xtable = IndexedTable(collect(xaxis), fill(0.0, length(xaxis)), presorted = true)
+            get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xtable, select(tt, n, n+1))
+        end
+        return filter(i -> all(isfinite.(i)), g)
     end
-    filter(i -> all(isfinite.(i)), g)
 end
 
 function group_apply(df::IndexedTable; kwargs...)

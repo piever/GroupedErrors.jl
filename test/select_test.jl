@@ -15,13 +15,24 @@ f(x,y,z) = y +z
 Val{:discrete}()::Val{:discrete}
 g = (args...) -> f(1, args...)
 g(2,3)
+
+:Protocol in [1, 2]
+
+
 s = @given i in school begin
+    where(i.Minrty == "Yes")
     groupby(i.Sx)
+    #xsummarize(mean)
+    #ysummarize(std)
     across(i.School)
-    x(i.SSS)
-    y(i.MAch, span = 0.9)
-    plot(;)
+    x(i.MAch)
+    y(:density)
+    scatter()
 end
+
+
+
+
 using StatPlots
 s = @given i in school begin
     #where(i.Minrty == "Yes")
@@ -38,13 +49,9 @@ end
 
 #GroupedErrors.plot_helper(s, plot)
 
-b = quote
-    groupby(i.Sx)
-    across(i.School)
-    x(i.SSS, :binned, 20)
-    y(i.MAch)
-    plot(;)
-end
+s = IndexedTable(Columns(fill(1,10), rand(Bool,10)), Columns(rand(10), rand(10)))
+select(aggregate_vec(v -> (mean(t->t[1], v), mean(t->t[2], v)), s),[1]...)
+
 
 i = a.args[2]
 df = a.args[3]
@@ -89,19 +96,12 @@ plottable_table = Expr(:call, :(GroupedErrors.group_apply),
     kwargs..., Expr(:kw, :fkwargs, Expr(:call, :(GroupedErrors.store_kws), fkwargs...)))
 
 
-args = b.args
 if @capture(args[end], fun_(as__; kws__)) && fun != :y
     return Expr(:call, plottable_table, :(GroupedErrors.plot_helper), as...; kws...)
 else
     return plottable_table
 end
 
-b = quote
-    groupby(i.Sx)
-    across(i.School)
-    x(i.SSS, :binned, 20)
-    y(i.MAch)
-    plot(;s = 11)
-end
+
 args[end].head
 @capture(b.args[end], fun_(as__))# && fun != :y
