@@ -3,15 +3,16 @@ school = RDatasets.dataset("mlmRev","Hsb82")
 kw = Dict{Symbol,Any}(:f => :density, :axis_type => :binned)
 table = IndexedTable(Columns(school[:Sx], school[:School], school[:SSS]),
     fill(NaN, size(school,1)))
-
-s = @given i in school begin
-    where(i.Minrty == "Yes")
-    groupby(i.Sx)
+using Juno
+@given i in school begin
+    #where(i.Minrty == "Yes")
+    groupby(eval(Expr(:., :i, Expr(:quote, :Sx))))
     #xsummarize(mean)
     #ysummarize(std)
-    across(i.School)
-    x(i.MAch, :pointbypoint)
-    y(i.SSS)
+    #across(:all)
+    #across(:all)
+    x(i.SSS, :binned)
+    y(:density)
     scatter()
 end
 @capture(Expr(:call, :across, :(:all)), fun_(var_))

@@ -26,6 +26,7 @@ function helper(a, b)
             else
                 acrossf = var
             end
+            push!(kwargs, Expr(:kw, :compute_error, Expr(:quote, :across)))
         elseif @capture(arg, fun_(var_, others__)) && fun == :x
             xf = var
             kws = [:axis_type, :nbins]

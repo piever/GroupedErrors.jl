@@ -7,6 +7,7 @@ function pipeline!(cols, kw)
     kw[:axis_type] = get(kw, :axis_type, :auto)
     kw[:summarize] = get(kw, :summarize, (mean,sem))
     kw[:compute_axis] = get(kw, :compute_axis, :auto)
+    kw[:compute_error] = get(kw, :compute_error, false)
     kw[:acrossall] = get(kw, :acrossall, false)
     kw[:fkwargs] = get(kw, :fkwargs, [])
     t = process_axis_type!(cols, kw)
@@ -49,14 +50,12 @@ function process_function!(t::Table2Process)
     t.kw[:fclosure] = (args...) -> t.kw[:f](Val{t.kw[:axis_type]}(), args...; t.kw[:fkwargs]...)
 end
 
-_isnan(v) = false
-_isnan(v::Float64) = isnan(v)
 
-function get_grouped_error(trend, variation, f!, xtable, t)
+function get_grouped_error(trend, variation, f!, xtable, t, compute_error)
     splitdata = mapslices(tt -> f!(xtable, select(tt,2)), t, 2)
     nanfree = filter(isfinite, splitdata)
-    all(_isnan.(keys(t, 1))) ? reducedim((x,y)->y, nanfree, 1) :
-        reducedim_vec(i -> (trend(i), variation(i)), nanfree, 1)
+    compute_error == :across ? reducedim_vec(i -> (trend(i), variation(i)), nanfree, 1) :
+        reducedim((x,y)->y, nanfree, 1)
 end
 
 function _group_apply(t::Table2Process)
@@ -67,7 +66,7 @@ function _group_apply(t::Table2Process)
         g = mapslices(t.table, [n, n+1]) do tt
             xaxis = get_axis(keys(tt, n+1), t.kw[:axis_type], t.kw[:compute_axis])
             xtable = IndexedTable(collect(xaxis), fill(0.0, length(xaxis)), presorted = true)
-            get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xtable, select(tt, n, n+1))
+            get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xtable, select(tt, n, n+1), t.kw[:compute_error])
         end
         return filter(i -> all(isfinite.(i)), g)
     end
