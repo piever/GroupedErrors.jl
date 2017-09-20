@@ -1,24 +1,42 @@
 using DataFrames, RDatasets, IndexedTables, IterableTables, StatPlots
 school = RDatasets.dataset("mlmRev","Hsb82")
-kw = Dict{Symbol,Any}(:f => :density, :axis_type => :binned)
-table = IndexedTable(Columns(school[:Sx], school[:School], school[:SSS]),
-    fill(NaN, size(school,1)))
-using Juno
-@given i in school begin
-    #where(i.Minrty == "Yes")
-    groupby(eval(Expr(:., :i, Expr(:quote, :Sx))))
-    #xsummarize(mean)
-    #ysummarize(std)
-    #across(:all)
-    #across(:all)
-    x(i.SSS, :binned)
-    y(:density)
-    scatter()
+
+s = Selector(school, t -> (t.MAch > 10,), t -> 1, t -> 1, t -> 1, Dict{Symbol, Any}())
+
+using Lazy
+using Query
+@> school begin
+    #@where (_.Minrty == "No")
+    @splitby (_.Sx, _.Minrty)
+    @across _.School
+    @x(_.SSS, :continuous)
+    @y(:density, bandwidth = 0.1)
+    @plot plot()
 end
-@capture(Expr(:call, :across, :(:all)), fun_(var_))
-var == Expr(:quote, :all)
 
+@plot t plot()
+typeof(t.table[4])
+pipeline!(t.table, t.kw)
 
+plot
+
+df = DataFrame(x=rand(10))
+using IterableTables
+df::IterableTables.IterableTable
+using KernelDensity
+using StatPlots
+v = randn(100)
+plot([v], [v, v],
+    seriestype = [:histogram :path],
+    layout = (2,1),
+    nbins = 40,
+    legend = false,
+    xlims = (-5, 5))
+histogram(rand(1000), randn(1000))
+
+marginalhist(randn(1000), randn(1000))
+s = kde([vcat(rand(500),rand(500)-5)  randn(1000)])
+    plot(s)
 
 using StatPlots
 s = @given i in school begin
@@ -31,64 +49,96 @@ s = @given i in school begin
     groupedbar(linewidth = 2, color = ["blue" "black"])
 end
 
+s = @from i in school begin
+    @where i.Minrty == "Yes"
+    @groupby i by i.Sx into j
+    @select {j..MAch, j..School, } into k
+    @let shared_axis = compute_axis(k..MAch)
+    @group k.MAch by k.School into l
+    @select {axis = compute_axis(l), density = compute_density(l, axis) } into m
+    @group m by m.axis into n
+    @select {mean(m..density), sem(m..density)}
+    @collect DataFrame
+end
 
+using IndexedTables
+
+s = IndexedTable(rand(Bool,100), fill(true,100), rand(100))
+mapslices(t->IndexedTable([1, 2], [1, 2]) , s, [])
+
+s = IndexedTable(rand(Bool,100), rand(Bool,100),  rand(100))
+mapslices(t->IndexedTable([1, 2], [1, 2]) , s,  [])
+IndexedTables.mapslices(println, s, [1])
+
+IndexedTables.mapslices(t -> IndexedTable(rand(2), rand(2)), s, [1])
 # TO DO: kws for plot call + locreg bug
-
-#GroupedErrors.plot_helper(s, plot)
-
-s = IndexedTable(Columns(fill(1,10), rand(Bool,10)), Columns(rand(10), rand(10)))
-select(aggregate_vec(v -> (mean(t->t[1], v), mean(t->t[2], v)), s),[1]...)
+s = IndexedTable(rand(Bool,10), rand(10))
 
 
-i = a.args[2]
-df = a.args[3]
-args = b.args
-kwargs = []
-fkwargs = []
-f1 = :(t -> true)
-groupfs = Any[0.0]
-acrossf = 0.0
-xf = 0.0
-yf = NaN
-for arg in args
-    if @capture(arg, fun_(cond_)) && fun == :where
-        f1 = Expr(:->, i, cond)
-    elseif @capture(arg, fun_(as__)) && fun == :groupby
-        groupfs = as
-    elseif @capture(arg, fun_(var_)) && fun == :across
-        acrossf = var
-    elseif @capture(arg, fun_(var_, others__)) && fun == :x
-        xf = var
-        kws = [:axis_type, :nbins]
-        for (ind, val) in enumerate(others)
-            push!(kwargs, Expr(:kw, kws[ind], val))
-        end
-    elseif @capture(arg, fun_(var_, others__)) && fun == :y
-        if @capture(var, :(sym_))
-            push!(kwargs, Expr(:kw, :f, var))
-        else
-            push!(kwargs, Expr(:kw, :f, Expr(:quote, :locreg)))
-            yf = var
-        end
-        fkwargs = others
-    elseif @capture(arg, fun_(as__)) && fun == :summarize
-        push!(kwargs, Expr(:kw, :summarize, Expr(:tuple, as...)))
-    end
+using Query, DataFrames
+
+
+x = @from i in df begin
+    @where i.age>40
+    @select (i.name,)#merge(i, @NT(b=2))
+    @collect
 end
 
-f2 = Expr(:->, i, Expr(:tuple, groupfs..., acrossf, xf, yf))
-selector =  Expr(:call, :(GroupedErrors.Selector), f1, f2)
-plottable_table = Expr(:call, :(GroupedErrors.group_apply),
-    :(GroupedErrors.IndexedTable(GroupedErrors.get_cols($df, $selector)...)),
-    kwargs..., Expr(:kw, :fkwargs, Expr(:call, :(GroupedErrors.store_kws), fkwargs...)))
+using DataFrames, Query, IndexedTables
+df = DataFrame(name=["John", "Sally", "Kirk"], age=[23., 42., 59.], children=[3,5,2])
+using NamedTuples
+using Query
+const ToT =
+ToT((1 for i in 1:2)...)::ToT
+typeof(@NT(a=2))
+const Tr = NamedTuples.make_tuple([:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}
+
+buildf(T) = i -> T((i.children for j in 1:2)...)::T
+
+TuT = NamedTuples.make_tuple([:a, :b]){Int64, Int64}
+
+buildf()(@NT(children = 124))
+fs(i)::Tr =
+
+fff(@NT(children = 124))
+ff(i) = map(j -> i.children, (1,2))
+ss = tuple([:children]...)
+ss
+gettype(ss) =
+    Base._return_type(i -> map(s -> getfield(i, s), ss),
+    Tuple{typeof(@NT(children = 124)),})
+
+gettype(ss)
+NamedTuples.make_tuple([:a, :b]){Tuple{Int64, Int64}.parameters...}
 
 
-if @capture(args[end], fun_(as__; kws__)) && fun != :y
-    return Expr(:call, plottable_table, :(GroupedErrors.plot_helper), as...; kws...)
-else
-    return plottable_table
+map(s -> i.s, (:children,))
+x = df |>
+    @where(_.age>40) |>
+    @select(i -> fs(i))
+const L = NamedTuples.make_tuple(
+    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}
+@select(df, i -> @NT(a = i.children))
+it = Query.select(Query.query(df), i -> NamedTuples.make_tuple(
+    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}(
+    (i.children, i.children)...)::L, :(1+1))
+f = i -> NamedTuples.make_tuple(
+    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}(
+    (i.children, i.children)...)
+T = Base._return_type(i -> NamedTuples.make_tuple(
+    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}(
+    (i.children, i.children)...)::L, Tuple{typeof(@NT(children = 124)),})
+l = Query.EnumerableSelect{T, typeof(Query.query(df)), typeof(f)}(
+    Query.query(df),f)
+
+TableTraitsUtils.create_columns_from_iterabletable(l)
+for t in TableTraitsUtils.getiterator(x)
+    println(t[1])
 end
 
+EnumerableSelect{T,S,Q}(source, f)
 
-args[end].head
-@capture(b.args[end], fun_(as__))# && fun != :y
+TableTraits.isiterable(x)
+methods(DataFrame)
+
+df |> @groupby(_.a)

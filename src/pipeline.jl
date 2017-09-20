@@ -1,9 +1,5 @@
-struct Table2Process{T<:IndexedTable}
-    table::T
-    kw::Dict{Symbol, Any}
-end
-
-function pipeline!(cols, kw)
+function pipeline(df::Table2Process)
+    cols, kw = df.table, copy(df.kw)
     kw[:axis_type] = get(kw, :axis_type, :auto)
     kw[:summarize] = get(kw, :summarize, (mean,sem))
     kw[:compute_axis] = get(kw, :compute_axis, :auto)
@@ -12,7 +8,7 @@ function pipeline!(cols, kw)
     kw[:fkwargs] = get(kw, :fkwargs, [])
     t = process_axis_type!(cols, kw)
     process_function!(t)
-    return Table2Process(_group_apply(t), t.kw)
+    return ProcessedTable(_group_apply(t), t.kw)
 end
 
 function process_axis_type!(cols, kw)
@@ -71,5 +67,3 @@ function _group_apply(t::Table2Process)
         return filter(i -> all(isfinite.(i)), g)
     end
 end
-
-group_apply(cols; kwargs...) = pipeline!(cols, Dict{Symbol,Any}(kwargs))

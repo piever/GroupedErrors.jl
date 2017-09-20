@@ -7,12 +7,14 @@ using TableTraits
 using MacroTools
 using StatsBase
 
-export group_apply
-export @given
+export @splitby, @across, @x, @y, @summarize
+export ProcessedTable
 
+include("select.jl")
+include("query_macro.jl")
+include("plot_macro.jl")
 include("pipeline.jl")
 include("analysisfunctions.jl")
-include("select.jl")
-include("macro.jl")
+
 
 end
