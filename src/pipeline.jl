@@ -59,7 +59,16 @@ end
 function _group_apply(t::Table2Process)
     n = length(t.table.index.columns)-1
     if t.kw[:axis_type] == :pointbypoint
-        return select(aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table),(1:n)...)
+        w  = select(aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)),
+            t.kw[:yreduce](map(i->i[2], v))), t.table),(1:n)...)
+        if t.kw[:compare]
+            single_w = pick(1)(w)
+            a, b = unique(single_w.index.columns[n])
+            return innerjoin(select(select(single_w, n => t -> t == a),(1:n-1)...),
+                select(select(single_w, n => t -> t == b),(1:n-1)...))
+        else
+            return w
+        end
     else
         g = mapslices(t.table, [n, n+1]) do tt
             xaxis = get_axis(keys(tt, n+1), t.kw[:axis_type], t.kw[:compute_axis])

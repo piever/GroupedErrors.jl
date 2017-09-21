@@ -91,6 +91,25 @@ function _y(s::Selector, f, args...; kwargs...)
     return s2
 end
 
+macro xy(s, arg)
+	return esc(:(GroupedErrors.@y(GroupedErrors.@x($s, $arg), $arg)))
+end
+
+macro xy(s, arg, f)
+	return esc(:(GroupedErrors.@y(GroupedErrors.@x($s, $arg, $f), $arg, $f)))
+end
+
+macro compare(s, f)
+	anon_func = helper_replace_anon_func_syntax(f)
+	Expr(:call, :_compare, esc(s), esc(anon_func))
+end
+
+function _compare(s::Selector, f)
+	s2 = replace_selector(s, f, :compare)
+	s2.kw[:compare] = true
+	s2
+end
+
 macro summarize(s, trend, variation)
     Expr(:call, :_summarize, esc(s), esc(trend), esc(variation))
 end
@@ -100,6 +119,6 @@ function _summarize(s::Selector, trend, variation)
     return s
 end
 
-for f in (:_splitby, :_across, :_x, :_y, :summarize)
+for f in (:_splitby, :_across, :_x, :_y, :_summarize, :_compare)
     @eval ($f)(s, args...; kwargs...) = ($f)(convert(Selector, s), args...; kwargs...)
 end

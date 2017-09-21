@@ -1,13 +1,14 @@
-struct Selector{T, F1<:Function, F2<:Function, F3<:Function, F4<:Function}
+struct Selector{T, F1<:Function, F2<:Function, F3<:Function, F4<:Function, F5<:Function}
     table::T
     splitby::F1
-    across::F2
-    x::F3
-    y::F4
+    compare::F2
+    across::F3
+    x::F4
+    y::F5
     kw::Dict{Symbol, Any}
 end
 
-Selector(df) = Selector(df, t -> ("",), t -> 0.0, t -> 0.0, t -> NaN, Dict{Symbol, Any}())
+Selector(df) = Selector(df, t -> ("",), t -> (),t -> 0.0, t -> 0.0, t -> NaN, Dict{Symbol, Any}(:compare => false))
 
 Base.convert(::Type{Selector}, a::Selector) = a
 Base.convert(::Type{Selector}, a) = Selector(a)
@@ -22,7 +23,11 @@ Table2Process(table) = Table2Process(table, Dict{Symbol, Any}())
 function Table2Process(s::Selector)
     enumerable = TableTraits.getiterator(s.table)
     T = eltype(enumerable)
-    select_func = t -> (s.splitby(t)..., s.across(t), s.x(t), s.y(t))
+    if s.kw[:compare]
+        select_func = t -> (s.splitby(t)..., s.compare(t), s.across(t), s.x(t), s.y(t))
+    else
+        select_func = t -> (s.splitby(t)..., s.across(t), s.x(t), s.y(t))
+    end
     column_types = Base._return_type(select_func, Tuple{T,}).parameters
     columns = Tuple(S[] for S in column_types)
     fill_cols!(columns, enumerable, select_func)

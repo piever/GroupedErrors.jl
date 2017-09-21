@@ -1,24 +1,28 @@
 using DataFrames, RDatasets, IndexedTables, IterableTables, StatPlots
 school = RDatasets.dataset("mlmRev","Hsb82")
 
-s = Selector(school, t -> (t.MAch > 10,), t -> 1, t -> 1, t -> 1, Dict{Symbol, Any}())
 
 using Lazy
 using Query
 @> school begin
     #@where (_.Minrty == "No")
-    @splitby (_.Sx, )
-    @across _.School
-    @x(_.SSS, mean)
-    @y(_.SSS, std)
+    #@splitby (_.Minrty,)
+    @compare _.Minrty
+    @across _.Sx
+    @xy _.SSS
+    #@y _.MAch
     @plot scatter()
 end
 
-@plot t plot()
-typeof(t.table[4])
-pipeline!(t.table, t.kw)
+Plots.abline!(1,0)
 
-plot
+using IndexedTables
+s = IndexedTable(rand(Bool, 20), rand(Bool, 20))
+t = IndexedTable([true, false], [true, false])
+innerjoin(s, t)
+vv = (x,y) -> x+y
+
+vv(1,2)
 
 df = DataFrame(x=rand(10))
 using IterableTables
@@ -84,82 +88,11 @@ x = @from i in df begin
     @collect
 end
 
-using DataFrames, Query, IndexedTables
-df = DataFrame(name=["John", "Sally", "Kirk"], age=[23., 42., 59.], children=[3,5,2])
-using NamedTuples
-using Query
-const ToT =
-ToT((1 for i in 1:2)...)::ToT
-typeof(@NT(a=2))
-using DataValues
-const Tr =
-    NamedTuples.make_tuple([:a, :b]){
-    DataValues.DataValue{Int64},DataValues.DataValue{Int64}}
+using Query, DataFrames
 
-buildf(T) = i -> T((i.children for j in 1:2)...)::T
+df = DataFrame(a=[1,1,2,3], b=[4,5,6,8])
 
-NamedTuples.make_tuple([:a, :b]){Int64, Int64}(1, 2)
-
-buildf()(@NT(children = 124))
-fs(i)::Tr =
-
-fff(@NT(children = 124))
-ff(i) = map(j -> i.children, (1,2))
-ss = tuple([:children, :children]...)
-const ToT = NamedTuples.make_tuple([:a, :b]){Int64, Int64}
-gettype(ss, x::Type{T}) where {T} =
-    Base._return_type(i -> T(
-    map(s -> getfield(i, s), ss)...)::T,
-    Tuple{typeof(@NT(children = 124)),})
-
-gettype(ss, NamedTuples.make_tuple([:a, :b]){Int64, Int64})
-NamedTuples.make_tuple([:a, :b]){Tuple{Int64, Int64}.parameters...}
-
-const S = tuple([:children, :children]...)
-ff(i) = map(s -> getfield(i, s), S)
-
-Base._return_type(ff, Tuple{typeof(@NT(children = 124)),})
-Tuple{Int64}.parameters
-Tuple2Named(i, ff, ::Type{T})
-methods(NamedTuples.make_tuple)
-function embed(t::T) where {T<: Tuple}
-    params = T.parameters
-    NLT = NamedTuples.make_tuple([Symbol("x$i") for i in 1:length(params)]){params...}
-    tuplify(t, NLT)
-end
-tuplify(a, ::Type{T}) where T = T(a...)::T
-NamedTuple{(:a, :b), Tuple{Int, Int}}
-
-embed((1,2))
-Base._return_type(embed, Tuple{typeof((1,2)),})
-
-map(s -> i.s, (:children,))
-x = df |>
-    @where(_.age>40) |>
-    @select(i -> fs(i))
-const L = NamedTuples.make_tuple(
-    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}
-@select(df, i -> @NT(a = i.children))
-it = Query.select(Query.query(df), i -> NamedTuples.make_tuple(
-    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}(
-    (i.children, i.children)...)::L, :(1+1))
-f = i -> NamedTuples.make_tuple(
-    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}(
-    (i.children, i.children)...)
-T = Base._return_type(i -> NamedTuples.make_tuple(
-    [:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}(
-    (i.children, i.children)...)::L, Tuple{typeof(@NT(children = 124)),})
-l = Query.EnumerableSelect{T, typeof(Query.query(df)), typeof(f)}(
-    Query.query(df),f)
-
-TableTraitsUtils.create_columns_from_iterabletable(l)
-for t in TableTraitsUtils.getiterator(x)
-    println(t[1])
-end
-
-EnumerableSelect{T,S,Q}(source, f)
-
-TableTraits.isiterable(x)
-methods(DataFrame)
-
-df |> @groupby(_.a)
+df2 = df |>
+    @groupby({a = (_.a, _.a)} ) |>
+    @select({a = _.key, b=_}) |>
+    DataFrame
