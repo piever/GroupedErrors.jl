@@ -7,11 +7,11 @@ using Lazy
 using Query
 @> school begin
     #@where (_.Minrty == "No")
-    @splitby (_.Sx, _.Minrty)
+    @splitby (_.Sx, )
     @across _.School
-    @x(_.SSS, :continuous)
-    @y(:density, bandwidth = 0.1)
-    @plot plot()
+    @x(_.SSS, mean)
+    @y(_.SSS, std)
+    @plot scatter()
 end
 
 @plot t plot()
@@ -91,26 +91,47 @@ using Query
 const ToT =
 ToT((1 for i in 1:2)...)::ToT
 typeof(@NT(a=2))
-const Tr = NamedTuples.make_tuple([:a, :b]){DataValues.DataValue{Int64},DataValues.DataValue{Int64}}
+using DataValues
+const Tr =
+    NamedTuples.make_tuple([:a, :b]){
+    DataValues.DataValue{Int64},DataValues.DataValue{Int64}}
 
 buildf(T) = i -> T((i.children for j in 1:2)...)::T
 
-TuT = NamedTuples.make_tuple([:a, :b]){Int64, Int64}
+NamedTuples.make_tuple([:a, :b]){Int64, Int64}(1, 2)
 
 buildf()(@NT(children = 124))
 fs(i)::Tr =
 
 fff(@NT(children = 124))
 ff(i) = map(j -> i.children, (1,2))
-ss = tuple([:children]...)
-ss
-gettype(ss) =
-    Base._return_type(i -> map(s -> getfield(i, s), ss),
+ss = tuple([:children, :children]...)
+const ToT = NamedTuples.make_tuple([:a, :b]){Int64, Int64}
+gettype(ss, x::Type{T}) where {T} =
+    Base._return_type(i -> T(
+    map(s -> getfield(i, s), ss)...)::T,
     Tuple{typeof(@NT(children = 124)),})
 
-gettype(ss)
+gettype(ss, NamedTuples.make_tuple([:a, :b]){Int64, Int64})
 NamedTuples.make_tuple([:a, :b]){Tuple{Int64, Int64}.parameters...}
 
+const S = tuple([:children, :children]...)
+ff(i) = map(s -> getfield(i, s), S)
+
+Base._return_type(ff, Tuple{typeof(@NT(children = 124)),})
+Tuple{Int64}.parameters
+Tuple2Named(i, ff, ::Type{T})
+methods(NamedTuples.make_tuple)
+function embed(t::T) where {T<: Tuple}
+    params = T.parameters
+    NLT = NamedTuples.make_tuple([Symbol("x$i") for i in 1:length(params)]){params...}
+    tuplify(t, NLT)
+end
+tuplify(a, ::Type{T}) where T = T(a...)::T
+NamedTuple{(:a, :b), Tuple{Int, Int}}
+
+embed((1,2))
+Base._return_type(embed, Tuple{typeof((1,2)),})
 
 map(s -> i.s, (:children,))
 x = df |>

@@ -6,6 +6,8 @@ function pipeline(df::Table2Process)
     kw[:compute_error] = get(kw, :compute_error, false)
     kw[:acrossall] = get(kw, :acrossall, false)
     kw[:fkwargs] = get(kw, :fkwargs, [])
+    kw[:xreduce] = get(kw, :xreduce, mean)
+    kw[:yreduce] = get(kw, :yreduce, mean)
     t = process_axis_type!(cols, kw)
     process_function!(t)
     return ProcessedTable(_group_apply(t), t.kw)
@@ -57,7 +59,7 @@ end
 function _group_apply(t::Table2Process)
     n = length(t.table.index.columns)-1
     if t.kw[:axis_type] == :pointbypoint
-        return select(aggregate_vec(v -> (mean(i->i[1], v), mean(i->i[2], v)), t.table),(1:n)...)
+        return select(aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table),(1:n)...)
     else
         g = mapslices(t.table, [n, n+1]) do tt
             xaxis = get_axis(keys(tt, n+1), t.kw[:axis_type], t.kw[:compute_axis])

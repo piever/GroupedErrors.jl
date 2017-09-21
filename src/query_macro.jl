@@ -54,13 +54,17 @@ end
 function _x(s::Selector, f, args...)
     s2 = replace_selector(s, f, :x)
     kws = [:axis_type, :nbins]
-    for (ind, val) in enumerate(args)
-        s2.kw[kws[ind]] = val
-    end
+	if args == () || isa(args[1], Symbol)
+	    for (ind, val) in enumerate(args)
+	        s2.kw[kws[ind]] = val
+	    end
+	else
+		s2.kw[:xreduce] = args[1]
+	end
     return s2
 end
 
-_kw(ex) = Expr(:kw, ex.args...)
+_kw(ex) = (isa(ex, Expr) && ex.head == :(=)) ? Expr(:kw, ex.args...) : ex
 
 store_kws(; kwargs...) = kwargs
 
@@ -73,13 +77,15 @@ macro y(s, y, args...)
     Expr(:call, :_y, esc(s), esc(p), (esc(_kw(arg)) for arg in args)...)
 end
 
-function _y(s::Selector, f; kwargs...)
+function _y(s::Selector, f, args...; kwargs...)
     if isa(f, Symbol)
         s2 = s
         s2.kw[:f] = f
     else
         s2 = replace_selector(s, f, :y)
         s2.kw[:f] = :locreg
+		s2.kw[:axis_type] = get(s2.kw, :axis_type, :pointbypoint)
+		(length(args) > 0) && (s2.kw[:yreduce] = args[1])
     end
     s2.kw[:fkwargs] = store_kws(; kwargs...)
     return s2
