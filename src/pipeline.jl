@@ -6,8 +6,8 @@ function pipeline(df::Table2Process)
     kw[:compute_error] = get(kw, :compute_error, false)
     kw[:acrossall] = get(kw, :acrossall, false)
     kw[:fkwargs] = get(kw, :fkwargs, [])
-    kw[:xreduce] = get(kw, :xreduce, mean)
-    kw[:yreduce] = get(kw, :yreduce, mean)
+    kw[:xreduce] = get(kw, :xreduce, false)
+    kw[:yreduce] = get(kw, :yreduce, false)
     t = process_axis_type!(cols, kw)
     process_function!(t)
     return ProcessedTable(_group_apply(t), t.kw)
@@ -59,13 +59,16 @@ end
 function _group_apply(t::Table2Process)
     n = length(t.table.index.columns)-1
     if t.kw[:axis_type] == :pointbypoint
-        w  = select(aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)),
-            t.kw[:yreduce](map(i->i[2], v))), t.table),(1:n)...)
+        if (t.kw[:xreduce] == false) || (t.kw[:yreduce] == false)
+            t.kw[:compare] && error("can't compare without xreduce and yreduce")
+            return t.table
+        end
+        w  = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table)
         if t.kw[:compare]
             single_w = pick(1)(w)
             a, b = unique(single_w.index.columns[n])
-            return innerjoin(select(select(single_w, n => t -> t == a),(1:n-1)...),
-                select(select(single_w, n => t -> t == b),(1:n-1)...))
+            return innerjoin(select(select(single_w, n => t -> t == a),(1:n-1)..., n+1),
+                select(select(single_w, n => t -> t == b),(1:n-1)..., n+1))
         else
             return w
         end

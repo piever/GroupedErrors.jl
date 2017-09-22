@@ -14,7 +14,7 @@ function plot_helper(t::ProcessedTable, f::Function, args...; kwargs...)
     if axis_type == :pointbypoint
         x = s.data.columns[1]
         y = s.data.columns[2]
-        group = s.index.columns
+        group = s.index.columns[1:end-1]
         f(args..., x, y; group = group, kwargs...)
     else
         x = s.index.columns[end]

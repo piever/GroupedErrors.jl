@@ -8,7 +8,7 @@ struct Selector{T, F1<:Function, F2<:Function, F3<:Function, F4<:Function, F5<:F
     kw::Dict{Symbol, Any}
 end
 
-Selector(df) = Selector(df, t -> ("",), t -> (),t -> 0.0, t -> 0.0, t -> NaN, Dict{Symbol, Any}(:compare => false))
+Selector(df) = Selector(df, t -> ("y1",), t -> (),t -> 0.0, t -> 0.0, t -> NaN, Dict{Symbol, Any}(:compare => false))
 
 Base.convert(::Type{Selector}, a::Selector) = a
 Base.convert(::Type{Selector}, a) = Selector(a)

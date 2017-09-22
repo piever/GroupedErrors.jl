@@ -43,6 +43,8 @@ function _across(s::Selector, f)
         s2 = replace_selector(s, f, :across)
     end
     s2.kw[:compute_error] = :across
+	s2.kw[:xreduce] = get(s2.kw, :xreduce, mean)
+    s2.kw[:yreduce] = get(s2.kw, :yreduce, mean)
     s2
 end
 

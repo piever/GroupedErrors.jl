@@ -1,19 +1,17 @@
 using DataFrames, RDatasets, IndexedTables, IterableTables, StatPlots
 school = RDatasets.dataset("mlmRev","Hsb82")
 
-
-using Lazy
-using Query
 @> school begin
     #@where (_.Minrty == "No")
     #@splitby (_.Minrty,)
-    @compare _.Minrty
-    @across _.Sx
+    @across _.School
     @xy _.SSS
-    #@y _.MAch
+    @compare _.Sx
+    #ProcessedTable
+    #@compare _.Sx
     @plot scatter()
 end
-
+scatter(school[:SSS], school[:MAch])
 Plots.abline!(1,0)
 
 using IndexedTables
