@@ -1,3 +1,4 @@
+__precompile__(false)
 module GroupedErrors
 
 import Loess, KernelDensity, IterableTables

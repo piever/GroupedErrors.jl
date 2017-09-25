@@ -72,7 +72,7 @@ _hazard!(T, xtable, t; kwargs...) =
 #### Method to compute and plot grouped error plots using the above functions
 
 get_axis(column) = sort!(union(column))
-get_axis(column, npoints::Int64) = linspace(Plots.ignorenan_minimum(column),Plots.ignorenan_maximum(column),npoints)
+get_axis(column, npoints::Int64) = linspace(extrema(column)..., npoints)
 
 function get_axis(column, axis_type::Symbol, compute_axis::Symbol; kwargs...)
     if axis_type == :discrete

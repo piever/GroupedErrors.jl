@@ -23,10 +23,12 @@ Table2Process(table) = Table2Process(table, Dict{Symbol, Any}())
 function Table2Process(s::Selector)
     enumerable = TableTraits.getiterator(s.table)
     T = eltype(enumerable)
+    splitter = Base._return_type(s.splitby, Tuple{T,})<:Tuple ?
+        t -> s.splitby(t) : t -> (s.splitby(t),)
     if s.kw[:compare]
-        select_func = t -> (s.splitby(t)..., s.compare(t), s.across(t), s.x(t), s.y(t))
+        select_func = t -> (splitter(t)..., s.compare(t), s.across(t), s.x(t), s.y(t))
     else
-        select_func = t -> (s.splitby(t)..., s.across(t), s.x(t), s.y(t))
+        select_func = t -> (splitter(t)..., s.across(t), s.x(t), s.y(t))
     end
     column_types = Base._return_type(select_func, Tuple{T,}).parameters
     columns = Tuple(S[] for S in column_types)

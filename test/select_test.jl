@@ -1,54 +1,75 @@
 using DataFrames, RDatasets, IndexedTables, IterableTables, StatPlots
+using GroupedErrors
 school = RDatasets.dataset("mlmRev","Hsb82")
 
 @> school begin
     #@where (_.Minrty == "No")
-    #@splitby (_.Minrty,)
+    @splitby (_.Minrty,)
     @across _.School
     @xy _.SSS
     @compare _.Sx
     #ProcessedTable
     #@compare _.Sx
-    @plot scatter()
+    @plot scatter(layout = 2, axis_ratio = :equal, legend = false)
 end
-scatter(school[:SSS], school[:MAch])
-Plots.abline!(1,0)
 
-using IndexedTables
-s = IndexedTable(rand(Bool, 20), rand(Bool, 20))
-t = IndexedTable([true, false], [true, false])
-innerjoin(s, t)
-vv = (x,y) -> x+y
+@> school begin
+    @splitby _.Sx
+    @across _.School
+    @x _.MAch
+    @y :cumulative
+    @plot plot(legend = :topleft)
+end
+grp_error = groupapply(:cumulative, school, :MAch; compute_error = (:across,:School), group = :Sx)
+plot(grp_error, line = :path, legend = :topleft)
 
-vv(1,2)
+@> school begin
+    @splitby _.Minrty
+    @across _.School
+    @x _.CSES
+    @y :density bandwidth = 0.2
+    @plot plot()
+end
 
-df = DataFrame(x=rand(10))
-using IterableTables
-df::IterableTables.IterableTable
-using KernelDensity
-using StatPlots
-v = randn(100)
-plot([v], [v, v],
-    seriestype = [:histogram :path],
-    layout = (2,1),
-    nbins = 40,
-    legend = false,
-    xlims = (-5, 5))
-histogram(rand(1000), randn(1000))
+pool!(school, :Sx)
+grp_error = groupapply(school, :Sx, :MAch; compute_error = :across, group = :Minrty)
+plot(grp_error, line = :bar)
 
-marginalhist(randn(1000), randn(1000))
-s = kde([vcat(rand(500),rand(500)-5)  randn(1000)])
-    plot(s)
+@> school begin
+    @splitby _.Minrty
+    @across :all
+    @x _.Sx :discrete
+    @y _.MAch
+    @plot groupedbar()
+end
 
-using StatPlots
-s = @given i in school begin
-    #where(i.Minrty == "Yes")
-    groupby(i.Minrty)
-    #summarize(mean, sem)
-    across(i.School)
-    x(i.Sx, :continuous)
-    y(i.SSS)
-    groupedbar(linewidth = 2, color = ["blue" "black"])
+grp_error = groupapply(:density, school, :MAch; axis_type = :binned, nbins = 40, group = :Minrty)
+plot(grp_error, line = :bar, color = ["orange" "turquoise"], legend = :topleft)
+
+grp_error = groupapply(:density, school, :MAch; axis_type = :continuous, group = :Minrty)
+plot!(grp_error, line = :path, color = ["orange" "turquoise"], label = "")
+
+@> school begin
+    @splitby _.Minrty
+    @x _.MAch :binned 40
+    @y :density
+    @plot groupedbar(color = ["orange" "turquoise"], legend = :topleft)
+end
+
+@> school begin
+    @splitby _.Minrty
+    @x _.MAch
+    @y :density
+    @plot plot!(color = ["orange" "turquoise"], legend = :topleft)
+end
+
+using Query
+@> school begin
+    #@where _.SSS > 0.5
+    @splitby _.Minrty
+    @x _.SSS
+    @y :density
+    @plot plot(color = ["orange" "turquoise"], legend = :topleft)
 end
 
 s = @from i in school begin
@@ -94,3 +115,14 @@ df2 = df |>
     @groupby({a = (_.a, _.a)} ) |>
     @select({a = _.key, b=_}) |>
     DataFrame
+
+
+using IndexedTables
+
+df = Columns(x = ["a", "b"], y = [1, 2])
+
+columns(df,:x)
+
+for i in df
+    println(i)
+end
