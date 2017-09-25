@@ -1,6 +1,6 @@
 using GroupedErrors
 using Base.Test
-using DataFrames, RDatasets, JLD
+using DataFrames, RDatasets, JLD, IndexedTables
 
 include("build_test_tables.jl")
 

@@ -3,6 +3,9 @@ julia 0.6
 StatsBase
 KernelDensity
 Loess
-IndexedTables
+IndexedTables 0.3.2
+IterableTables 0.5.1
+TableTraitsUtils 0.1.0
+TableTraits
 MacroTools
 Lazy

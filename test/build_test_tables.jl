@@ -1,7 +1,3 @@
-using GroupedErrors
-using Base.Test
-using DataFrames, RDatasets, JLD, IndexedTables
-
 tables = []
 
 school = RDatasets.dataset("mlmRev","Hsb82")
