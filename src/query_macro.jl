@@ -48,7 +48,7 @@ function _across(s::Selector, f)
     s2
 end
 
-macro bootstrap(s, arg)
+macro bootstrap(s, arg = 1000)
     Expr(:call, :_bootstrap, esc(s), esc(arg))
 end
 
