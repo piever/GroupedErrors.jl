@@ -138,7 +138,28 @@ end
 
 ![density](https://user-images.githubusercontent.com/6333339/29373096-06317b50-82a5-11e7-900f-d6c183977ab8.png)
 
-### Query compatibility
+## Saving the result of the statistical analysis
+
+Sometimes it is useful to save the result of an analysis rather than just plotting it. This can be achieved as follows:
+
+```julia
+processed_data = @> school begin
+    @splitby _.Minrty
+    @x _.MAch :binned 40
+    @y :density
+    ProcessedTable
+end
+```
+
+Now plotting can be done as usual with our plotting macro:
+
+```julia
+@plot processed_data groupedbar(color = ["orange" "turquoise"], legend = :topleft)
+```
+
+without repeating the statistical analysis (especially useful when the analysis is computationally expensive).
+
+## Query compatibility
 
 Of course the amount of data preprocessing in this package is very limited and misses important features (for example data selection). To address this issue, this package is compatible with the excellent querying package [Query.jl](https://github.com/davidanthoff/Query.jl). Starting with Query.jl version 0.7, the Query standalone macros (such as `@where`, `@select` etc.) can be combined with a GroupedErrors.jl pipeline as follows:
 

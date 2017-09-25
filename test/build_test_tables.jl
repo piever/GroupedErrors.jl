@@ -77,3 +77,24 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+
+#test bootstrap
+processed_table = @> school begin
+    @splitby _.Minrty
+    @bootstrap 500
+    @x _.CSES
+    @y :density bandwidth = 0.2
+    ProcessedTable
+end
+
+push!(tables, processed_table.table)
+
+#test continuous locreg
+processed_table = @> school begin
+    @splitby _.Minrty
+    @x _.MAch :continuous
+    @y _.SSS
+    ProcessedTable
+end
+
+push!(tables, processed_table.table)

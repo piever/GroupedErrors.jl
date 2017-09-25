@@ -48,6 +48,15 @@ function _across(s::Selector, f)
     s2
 end
 
+macro bootstrap(s, arg)
+    Expr(:call, :_bootstrap, esc(s), esc(arg))
+end
+
+function _bootstrap(s::Selector, n)
+    s.kw[:compute_error] = n
+	s
+end
+
 macro x(s, x, args...)
     anon_func = helper_replace_anon_func_syntax(x)
     Expr(:call, :_x, esc(s), esc(anon_func), (esc(arg) for arg in args)...)

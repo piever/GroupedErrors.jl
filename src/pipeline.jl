@@ -1,9 +1,13 @@
 function pipeline(df::Table2Process)
     cols, kw = df.table, copy(df.kw)
     kw[:axis_type] = get(kw, :axis_type, :auto)
-    kw[:summarize] = get(kw, :summarize, (mean,sem))
     kw[:compute_axis] = get(kw, :compute_axis, :auto)
-    kw[:compute_error] = get(kw, :compute_error, false)
+    kw[:compute_error] = get(kw, :compute_error, :none)
+    if isa(kw[:compute_error], Number)
+        kw[:summarize] = get(kw, :summarize, (mean,std))
+    else
+        kw[:summarize] = get(kw, :summarize, (mean,sem))
+    end
     kw[:acrossall] = get(kw, :acrossall, false)
     kw[:fkwargs] = get(kw, :fkwargs, [])
     kw[:xreduce] = get(kw, :xreduce, false)
@@ -50,10 +54,27 @@ end
 
 
 function get_grouped_error(trend, variation, f!, xtable, t, compute_error)
-    splitdata = mapslices(tt -> f!(xtable, select(tt,2)), t, 2)
+    if !isa(compute_error, Integer)
+        splitdata = mapslices(tt -> f!(xtable, select(tt,2)), t, 2)
+    else
+        ns = compute_error
+        ref_data = select(t,2)
+        xaxis = columns(xtable, 1)
+        large_table = IndexedTable(repeat(collect(1:ns), inner = length(xaxis)),
+            repeat(xaxis, outer = ns), zeros(ns*length(xaxis)), presorted = true)
+        splitdata = mapslices(large_table, 1) do tt
+            nd = length(ref_data.data)
+            perm = rand(1:nd,nd)
+            permuted_data = IndexedTable(keys(ref_data,1)[rand(1:nd,nd)], ref_data.data[rand(1:nd,nd)])
+            f!(xtable, permuted_data)
+        end
+    end
     nanfree = filter(isfinite, splitdata)
-    compute_error == :across ? reducedim_vec(i -> (trend(i), variation(i)), nanfree, 1) :
-        reducedim((x,y)->y, nanfree, 1)
+    if compute_error == :none
+        return reducedim((x,y)->y, nanfree, 1)
+    else
+        return reducedim_vec(i -> (trend(i), variation(i)), nanfree, 1)
+    end
 end
 
 function _group_apply(t::Table2Process)

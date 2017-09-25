@@ -8,7 +8,7 @@ predicting `xaxis`
 """
 function _locreg!(::Val{:continuous}, xtable, t; kwargs...)
     x, y = keys(t, 1), t.data
-    within = filter(t -> Plots.ignorenan_minimum(x)<= t <= Plots.ignorenan_maximum(x), keys(xtable,1))
+    within = filter(t -> minimum(x)<= t <= maximum(x), keys(xtable,1))
     if length(within) > 0
         model = Loess.loess(convert(Vector{Float64},x),convert(Vector{Float64},y); kwargs...)
         prediction = Loess.predict(model,within)
@@ -90,9 +90,6 @@ get_axis(column, axis_type::Symbol, compute_axis; kwargs...) =
 # f is the function used to analyze dataset: define it as nan when it is not defined,
 # the input is: dataframe used, points chosen on the x axis, x (and maybe y) column labels
 # the output is the y value for the given xvalues
-
-get_symbol(s::Symbol) = s
-get_symbol(s) = s[1]
 
 builtin_funcs = Dict(zip([:locreg, :density, :cumulative, :hazard],
     [_locreg!, _density!, _cumulative!, _hazard!]))
