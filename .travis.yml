@@ -1,15 +1,21 @@
 ## Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
+sudo: required
 os:
   - linux
-  - osx
 julia:
   - 0.6
   - nightly
+matrix:
+  allow_failures:
+    - julia: nightly
+
 notifications:
   email: false
-git:
-  depth: 99999999
+
+after_success:
+  - julia -e 'cd(Pkg.dir("PlugAndPlot")); Pkg.add("Documenter"); include(joinpath("docs", "make.jl"))';
+
 
 ## uncomment the following lines to allow failures on nightly julia
 ## (tests will run but not make your overall status red)
