@@ -9,7 +9,7 @@ using TableTraits
 using MacroTools
 using StatsBase
 
-export @splitby, @bootstrap, @across, @x, @y, @xy, @compare, @summarize, @>, @plot
+export @splitby, @bootstrap, @across, @x, @y, @xy, @compare, @summarize, @set_attr, @>, @plot
 export ProcessedTable
 
 include("select.jl")

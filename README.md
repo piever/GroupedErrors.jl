@@ -34,7 +34,7 @@ school = RDatasets.dataset("mlmRev","Hsb82")
 end
 ```
 
-This will simply extract two columns (namely `school[:MAch]` and `school[:SSS]`) and plot them one against the other splitting by the variable `school[:Sx]`, meaning it will actually produce two plots (one for males, one for females) and superimpose them with different colors. They can be displayed side by side using `@plot scatter(layout = 2)`.
+This will simply extract two columns (namely `school[:MAch]` and `school[:SSS]`) and plot them one against the other splitting by the variable `school[:Sx]`, meaning it will actually produce two plots (one for males, one for females) and superimpose them with different colors.  The `@plot` macro takes care of passing the outcome of the the analysis to the plot command. If not plot command is given, it defaults to `plot()`. However it is often useful to give a plot command to specify that we want a scatter plot or to customize the plot with any Plots.jl attribute. For example, our two traces can be displayed side by side using `@plot scatter(layout = 2)`.
 
 Now we have a dot per data point, which creates an overcrowded plot. Another option would be to plot across schools, namely each for each school we would compute the mean of `:MAch` and `:SSS` (always for males and females) and then plot with only one point per school. This can be achieved with:
 
@@ -101,7 +101,7 @@ Keywords for loess or kerneldensity can be given to groupapply:
     @across _.School
     @x _.CSES
     @y :density bandwidth = 0.2
-    @plot plot()
+    @plot #if no more customization is needed one can also just type @plot
 end
 ```
 
@@ -137,6 +137,27 @@ end
 ```
 
 ![density](https://user-images.githubusercontent.com/6333339/29373096-06317b50-82a5-11e7-900f-d6c183977ab8.png)
+
+## Experimental: set plot attributes according to groups
+
+As an experimental features, it is possible to pass attributes to plot that depend on the value of the group that each trace belong to. For example:
+
+```julia
+@> school begin
+    @splitby (_.Minrty, _.Sx)
+    @across _.School
+    @set_attr :linestyle _[1] == "Yes" ? :solid : :dash
+    @set_attr :color _[2] == "Male" ? :black : :blue
+    @x _.CSES
+    @y :density bandwidth = 0.2
+    @plot
+end
+```
+
+![set_attr](https://user-images.githubusercontent.com/6333339/30820980-8e16cc60-a21b-11e7-9b2d-4f55f37696d6.png)
+
+
+Here, the "label" of each trace we are plotting is a tuple, whose first element corresponds to the `:Minrty` and second element to the `:Sx`. With the following code, we decide to represent males in black, females in blue, minority with solid line and no-minority with dashed line. It is a bit inconvenient to use index rather than name to refer to the group but this may change when there will be support for NamedTuples in base Julia.
 
 ## Saving the result of the statistical analysis
 

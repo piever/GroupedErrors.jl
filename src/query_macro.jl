@@ -130,6 +130,17 @@ function _summarize(s::Selector, trend, variation)
     return s
 end
 
-for f in (:_splitby, :_across, :_x, :_y, :_summarize, :_compare)
+macro set_attr(s, arg, f)
+    func = helper_replace_anon_func_syntax(f)
+    Expr(:call, :_set_attr, esc(s), esc(arg), esc(func))
+end
+
+function _set_attr(s::Selector, arg, f)
+    s.kw[:plot_kwargs] = get(s.kw, :plot_kwargs, [])
+    push!(s.kw[:plot_kwargs], (arg, f))
+	s
+end
+
+for f in (:_splitby, :_across, :_bootstrap, :_x, :_y, :_summarize, :_compare, :_set_attr)
     @eval ($f)(s, args...; kwargs...) = ($f)(convert(Selector, s), args...; kwargs...)
 end

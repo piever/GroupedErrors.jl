@@ -26,3 +26,16 @@ for i in 1:length(tables)
         end
     end
 end
+
+
+processed_table = @> school begin
+    @splitby (_.Minrty, _.Sx)
+    @across _.School
+    @set_attr :linestyle _[1] == "Yes" ? :solid : :dash
+    @set_attr :color _[2] == "Male" ? :black : :blue
+    @x _.CSES
+    @y :density bandwidth = 0.2
+    ProcessedTable
+end
+
+@test [t[1] for t in processed_table.kw[:plot_kwargs]] == [:linestyle, :color]

@@ -1,4 +1,4 @@
-macro plot(plottable_table, plot_call)
+macro plot(plottable_table, plot_call = :(plot()))
     if @capture(plot_call, fun_(as__; kws__))
         return esc(Expr(:call, :(GroupedErrors.plot_helper), plottable_table, fun, as..., kws...))
     elseif @capture(plot_call, fun_(as__))
@@ -11,18 +11,20 @@ end
 function plot_helper(t::ProcessedTable, f::Function, args...; kwargs...)
     s = t.table
     axis_type = t.kw[:axis_type]
+    group = s.index.columns[1:end-1]
+    group_list = unique(Columns(group...))
+    plot_kwargs = [(plot_kwarg[1], reshape(plot_kwarg[2].(group_list), 1, :))
+        for plot_kwarg in t.kw[:plot_kwargs]]
     if axis_type == :pointbypoint
         x = s.data.columns[1]
         y = s.data.columns[2]
-        group = s.index.columns[1:end-1]
-        f(args..., x, y; group = group, kwargs...)
+        f(args..., x, y; group = group, kwargs..., plot_kwargs...)
     else
         x = s.index.columns[end]
         y = isa(s.data, Columns) ? s.data.columns[1] : s.data
-        group = s.index.columns[1:end-1]
         err = (isa(s.data, Columns) && (length(s.data.columns) > 1)) ? s.data.columns[2] : nothing
         err_style = axis_type == :discrete ? :err : :ribbon
-        f(args..., x, y; group = group, (err_style, err), kwargs...)
+        f(args..., x, y; group = group, (err_style, err), kwargs..., plot_kwargs...)
     end
 end
 
