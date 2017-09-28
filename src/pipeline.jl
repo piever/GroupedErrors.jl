@@ -14,7 +14,7 @@ function pipeline(df::Table2Process)
     kw[:yreduce] = get(kw, :yreduce, false)
     kw[:plot_kwargs] = get(kw, :plot_kwargs, [])
     t = process_axis_type!(cols, kw)
-    process_function!(t)
+    (kw[:axis_type] == :pointbypoint) || process_function!(t)
     return ProcessedTable(_group_apply(t), t.kw)
 end
 
@@ -34,9 +34,10 @@ function process_axis_type!(cols, kw)
         edges = linspace(extrema(x)..., nbins+1)
         middles = (edges[2:end] .+ edges[1:end-1])./2
         indices = [searchsortedfirst(edges[2:end], s) for s in x]
-        x .= middles[indices]
+        x_binned = middles[indices]
         bin_width = step(edges)
         kw[:axis_type] = :discrete
+        cols = tuple(cols[1:end-2]..., x_binned, cols[end])
     end
     (kw[:axis_type] == :auto) && (kw[:axis_type] = :continuous)
     kw[:axis_type] in [:discrete, :continuous] ||

@@ -48,6 +48,9 @@ Now we have a dot per data point, which creates an overcrowded plot. Another opt
 end
 ```
 
+![scatter](https://user-images.githubusercontent.com/6333339/30869875-2fea86da-a2da-11e7-8d2f-3e57a5a5ce39.png)
+
+
 `mean` is the default estimator, but any other function transforming a vector to a scalar would work, for example `median`:
 
 ```julia
@@ -60,6 +63,23 @@ end
 end
 ```
 
+One can also give a tuple of 2 functions where the second should represent the error:
+
+```julia
+@> school begin
+    @splitby _.Sx
+    @across _.School
+    @x _.MAch (mean, sem)
+    @y _.SSS (mean, sem)
+    @plot scatter()
+end
+```
+
+![scatter](https://user-images.githubusercontent.com/6333339/30869898-41fc9a5c-a2da-11e7-88b5-3642d76c2792.png)
+
+
+Though admittedly these data are very noisy and error bars come out huge. This analysis would look cleaner in a dataset with less groups (i.e. schools) but with more data per group.
+
 Finally, we may want to represent this information differently. For example we may want to plot the same variable (e.g. `:MAch`) on the `x` and `y` axis where one axis is the value corresponding to males and the other axis to females. This is achieved with:
 
 ```julia
@@ -67,9 +87,13 @@ Finally, we may want to represent this information differently. For example we m
     @across _.School
     @xy _.MAch
     @compare _.Sx
-    @plot scatter()
+    @plot scatter(axis_ratio = :equal, xlabel = "Female", ylabel = "Male",
+        legend = :topleft, size = (400,450))
 end
 ```
+
+![scatter](https://user-images.githubusercontent.com/6333339/30870031-a7908950-a2da-11e7-95f9-dd58dcb35e00.png)
+
 
 ### Analyzing variability across groups
 It is also possible to get average value and variability of a given analysis (density, cumulative, hazard rate and local regression are supported so far, but one can also add their own function) across groups.
@@ -138,6 +162,44 @@ end
 
 ![density](https://user-images.githubusercontent.com/6333339/29373096-06317b50-82a5-11e7-900f-d6c183977ab8.png)
 
+### Non-parametric bootstrap error computation
+
+Rather than computing the variability across groups, it is also possible to compute the overall variability using non-parametric [bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)#Case_resampling) using the `@bootstrap` macro. The analysis will be run as many times as the specified number (defaults to 1000) on a fake dataset sampled with replacement from the actual data. Estimate and error are computed as mean and std of the different outcomes. Example:
+
+```julia
+@> school begin
+    @splitby _.Minrty
+    @bootstrap 500
+    @x _.CSES
+    @y :density bandwidth = 0.2
+    @plot
+end
+```
+
+![bootstrap](https://user-images.githubusercontent.com/6333339/30870390-a785d568-a2db-11e7-974a-c5319b9d4154.png)
+
+### Advanced feature (for the brave user): customized analysis function
+
+If the set of preimplemented analysis functions turns out to be insufficient, it is possible to implement new ones as a user (should they be of sufficient generality, they could then be added to the package).
+
+For example, let's say we want to study the survival function, which is `1-cdf`. Then we should define:
+
+```julia
+survival!(args...) = broadcast(-, 1, GroupedErrors._cumulative!(args...))
+@> school begin
+    @splitby _.Sx
+    @across _.School
+    @x _.MAch
+    @y :custom survival!
+    @plot
+end
+```
+
+![surv](https://user-images.githubusercontent.com/6333339/30870065-baa34f14-a2da-11e7-9170-81dccb796236.png)
+
+
+For the moment there isn't good documentation on how to create your own analysis functions but as a start you can look at [this code](https://github.com/piever/GroupedErrors.jl/blob/master/src/analysisfunctions.jl) and try and follow the same pattern as those that are implemented already.
+
 ## Experimental: set plot attributes according to groups
 
 As an experimental features, it is possible to pass attributes to plot that depend on the value of the group that each trace belong to. For example:
@@ -194,3 +256,7 @@ using Query
     @plot plot(color = ["orange" "turquoise"], legend = :topleft)
 end
 ```
+
+## Missing data support
+
+This package supports missing data. In case of missing data, all rows with missing data in a column that is being used in the analysis will be discarded.

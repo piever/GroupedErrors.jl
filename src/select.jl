@@ -1,4 +1,19 @@
-struct Selector{T, F1<:Function, F2<:Function, F3<:Function, F4<:Function, F5<:Function}
+abstract type AbstractSelector; end
+
+struct ColumnSelector{T, S1<:Union{Symbol, Vector{Symbol}}, S2<:Union{Symbol, Void},
+    S3<:Union{Symbol, Void}, S4<:Union{Symbol, Void}, S5<:Union{Symbol, Void}} <: AbstractSelector
+    table::T
+    splitby::S1
+    compare::S2
+    across::S3
+    x::S4
+    y::S5
+    kw::Dict{Symbol, Any}
+end
+
+ColumnSelector(df) = ColumnSelector(df, Symbol[], nothing, nothing, nothing, nothing, Dict{Symbol, Any}(:compare => false))
+
+struct Selector{T, F1<:Function, F2<:Function, F3<:Function, F4<:Function, F5<:Function} <: AbstractSelector
     table::T
     splitby::F1
     compare::F2
@@ -31,9 +46,27 @@ function Table2Process(s::Selector)
         select_func = t -> (splitter(t)..., s.across(t), s.x(t), s.y(t))
     end
     column_types = Base._return_type(select_func, Tuple{T,}).parameters
-    columns = Tuple(S[] for S in column_types)
+    columns = Tuple(_type(S)[] for S in column_types)
     fill_cols!(columns, enumerable, select_func)
-    Table2Process(Tuple(convert_missing.(t) for t in columns), s.kw)
+    Table2Process(columns, s.kw)
+end
+
+function Table2Process(s::ColumnSelector)
+    if s.splitby == Symbol[]
+        splitter = [fill("y1", size(s.table, 1))]
+    elseif isa(s.splitby, Symbol)
+        splitter = [getindex(s.table, s.splitby)]
+    else
+        splitter = getindex.(s.table, s.splitby)
+    end
+    across_col = s.across == nothing ? fill(0.0, size(s.table, 1)) : getindex(s.table, s.across)
+    y_col = s.y == nothing? fill(NaN, size(s.table, 1)) : getindex(s.table, s.y)
+    if s.compare == nothing
+        columns = tuple(splitter..., across_col, getindex(s.table, s.x), y_col)
+    else
+        columns = tuple(splitter..., getindex.(s.table, s.compare), across_col, getindex(s.table, s.x), y_col)
+    end
+    Table2Process(columns, s.kw)
 end
 
 struct ProcessedTable{T}
@@ -42,27 +75,36 @@ struct ProcessedTable{T}
 end
 
 ProcessedTable(t::Table2Process) = pipeline(t)
-ProcessedTable(s::Selector) = ProcessedTable(Table2Process(s))
+ProcessedTable(s::AbstractSelector) = ProcessedTable(Table2Process(s))
+
+_isnull(x) = false
+_isnull(x::DataValue) = isnull(x)
+
+_get(x) = x
+_get(x::DataValue) = get(x)
+
+_type(x) = x
+_type(x::Type{DataValue{T}}) where T = T
+
 
 @generated function fill_cols!(columns, enumerable, select_func)
     push_exprs = Expr(:block)
     for i in find(collect(columns.types) .!= Void)
         ex = quote
-            j = select_func(i)
-            push!(columns[$i], j[$i])
+            push!(columns[$i], _get(j[$i]))
         end
         push!(push_exprs.args, ex)
+    end
+    cond_push_exprs = quote
+        j = select_func(i)
+        if !any(_isnull, j)
+            $push_exprs
+        end
     end
 
     quote
         for i in enumerable
-            $push_exprs
+            $cond_push_exprs
         end
     end
 end
-
-convert_missing(el) = el
-convert_missing(el::DataValue{T}) where {T} = isnull(el) ? error("Missing data of type $T is not supported") : el.value
-convert_missing(el::DataValue{<:AbstractString}) = get(el, "")
-convert_missing(el::DataValue{Symbol}) = get(el, Symbol())
-convert_missing(el::DataValue{<:Real}) = get(convert(DataValue{Float64}, el), NaN)

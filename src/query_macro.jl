@@ -16,10 +16,10 @@ function helper_replace_anon_func_syntax(ex)
 	end
 end
 
-function replace_selector(s::Selector, f, sym::Symbol)
+function replace_selector(s::S, f, sym::Symbol) where {S<:AbstractSelector}
     fields = fieldnames(s)
     new_fields = Tuple(field == sym ? f : getfield(s, field) for field in fields)
-    Selector(new_fields...)
+	(S <: Selector) ? Selector(new_fields...) : ColumnSelector(new_fields...)
 end
 
 macro splitby(s, arg)
@@ -27,7 +27,7 @@ macro splitby(s, arg)
     Expr(:call, :_splitby, esc(s), esc(anon_func))
 end
 
-_splitby(s::Selector, f) = replace_selector(s, f, :splitby)
+_splitby(s::AbstractSelector, f) = replace_selector(s, f, :splitby)
 
 macro across(s, arg)
     p = (arg == Expr(:quote, :all)) ? Expr(:quote, :all) :
@@ -35,13 +35,15 @@ macro across(s, arg)
     Expr(:call, :_across, esc(s), esc(p))
 end
 
-function _across(s::Selector, f)
+function _across(s::AbstractSelector, f)
     if f == :all
         s.kw[:acrossall] = true
         s2 = s
     else
         s2 = replace_selector(s, f, :across)
     end
+	haskey(s2.kw, :compute_error) && isa(s2.kw[:compute_error], Number) &&
+		error("@bootstrap and @across are not supported in the same pipeline")
     s2.kw[:compute_error] = :across
 	s2.kw[:xreduce] = get(s2.kw, :xreduce, mean)
     s2.kw[:yreduce] = get(s2.kw, :yreduce, mean)
@@ -52,17 +54,22 @@ macro bootstrap(s, arg = 1000)
     Expr(:call, :_bootstrap, esc(s), esc(arg))
 end
 
-function _bootstrap(s::Selector, n)
+function _bootstrap(s::AbstractSelector, n)
+	haskey(s.kw, :compute_error) && s.kw[:compute_error] == :across &&
+		error("@bootstrap and @across are not supported in the same pipeline")
     s.kw[:compute_error] = n
 	s
 end
+
+functionize(f) = f
+functionize(f::Tuple) = x -> map(g->g(x), f)
 
 macro x(s, x, args...)
     anon_func = helper_replace_anon_func_syntax(x)
     Expr(:call, :_x, esc(s), esc(anon_func), (esc(arg) for arg in args)...)
 end
 
-function _x(s::Selector, f, args...)
+function _x(s::AbstractSelector, f, args...)
     s2 = replace_selector(s, f, :x)
     kws = [:axis_type, :nbins]
 	if args == () || isa(args[1], Symbol)
@@ -70,7 +77,7 @@ function _x(s::Selector, f, args...)
 	        s2.kw[kws[ind]] = val
 	    end
 	else
-		s2.kw[:xreduce] = args[1]
+		s2.kw[:xreduce] = functionize(args[1])
 	end
     return s2
 end
@@ -91,12 +98,26 @@ end
 function _y(s::Selector, f, args...; kwargs...)
     if isa(f, Symbol)
         s2 = s
-        s2.kw[:f] = f
+		s2.kw[:f] = f == :custom ? args[1] : f
     else
         s2 = replace_selector(s, f, :y)
         s2.kw[:f] = :locreg
 		s2.kw[:axis_type] = get(s2.kw, :axis_type, :pointbypoint)
-		(length(args) > 0) && (s2.kw[:yreduce] = args[1])
+		(length(args) > 0) && (s2.kw[:yreduce] = functionize(args[1]))
+    end
+    s2.kw[:fkwargs] = store_kws(; kwargs...)
+    return s2
+end
+
+function _y(s::ColumnSelector, f, args...; kwargs...)
+    if get(s.kw, :axis_type, :pointbypoint) != :pointbypoint
+		s2 = (f == :locreg) ? replace_selector(s, args[1], :y) : s
+		s2.kw[:f] = f
+    else
+		s2 = replace_selector(s, f, :y)
+		s2.kw[:f] = :locreg
+		s2.kw[:axis_type] = get(s2.kw, :axis_type, :pointbypoint)
+		(length(args) > 0) && (s2.kw[:yreduce] = functionize(args[1]))
     end
     s2.kw[:fkwargs] = store_kws(; kwargs...)
     return s2
@@ -115,7 +136,7 @@ macro compare(s, f)
 	Expr(:call, :_compare, esc(s), esc(anon_func))
 end
 
-function _compare(s::Selector, f)
+function _compare(s::AbstractSelector, f)
 	s2 = replace_selector(s, f, :compare)
 	s2.kw[:compare] = true
 	s2
@@ -125,7 +146,7 @@ macro summarize(s, trend, variation)
     Expr(:call, :_summarize, esc(s), esc(trend), esc(variation))
 end
 
-function _summarize(s::Selector, trend, variation)
+function _summarize(s::AbstractSelector, trend, variation)
     s.kw[:summarize] = (trend, variation)
     return s
 end
@@ -135,7 +156,7 @@ macro set_attr(s, arg, f)
     Expr(:call, :_set_attr, esc(s), esc(arg), esc(func))
 end
 
-function _set_attr(s::Selector, arg, f)
+function _set_attr(s::AbstractSelector, arg, f)
     s.kw[:plot_kwargs] = get(s.kw, :plot_kwargs, [])
     push!(s.kw[:plot_kwargs], (arg, f))
 	s
