@@ -132,6 +132,7 @@ end
 The bar plot (here we use `@across :all` to compute the standard error across all observations):
 
 ```julia
+using StatPlots
 @> school begin
     @splitby _.Minrty
     @across :all
@@ -156,7 +157,7 @@ end
     @splitby _.Minrty
     @x _.MAch
     @y :density
-    @plot plot!(color = ["orange" "turquoise"], legend = :topleft)
+    @plot plot!(color = ["orange" "turquoise"], label = "")
 end
 ```
 
