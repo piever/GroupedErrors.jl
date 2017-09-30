@@ -86,14 +86,13 @@ function _group_apply(t::Table2Process)
             t.kw[:compare] && error("can't compare without xreduce and yreduce")
             return t.table
         end
-        w  = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table)
-        if t.kw[:compare]
-            single_w = pick(1)(w)
+        if !t.kw[:compare]
+            return aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table)
+        else
+            single_w = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)),), t.table)
             a, b = unique(single_w.index.columns[n])
             return innerjoin(select(select(single_w, n => t -> t == a),(1:n-1)..., n+1),
                 select(select(single_w, n => t -> t == b),(1:n-1)..., n+1))
-        else
-            return w
         end
     else
         g = mapslices(t.table, [n, n+1]) do tt
