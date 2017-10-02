@@ -79,21 +79,22 @@ function get_grouped_error(trend, variation, f!, xtable, t, compute_error)
     end
 end
 
+_isfinite(t) = isfinite(t)
+_isfinite(t::Tuple) = all(_isfinite.(t))
+
 function _group_apply(t::Table2Process)
     n = length(t.table.index.columns)-1
     if t.kw[:axis_type] == :pointbypoint
         if (t.kw[:xreduce] == false) || (t.kw[:yreduce] == false)
             t.kw[:compare] && error("can't compare without xreduce and yreduce")
-            return t.table
-        end
-        w  = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table)
-        if t.kw[:compare]
-            single_w = pick(1)(w)
-            a, b = unique(single_w.index.columns[n])
-            return innerjoin(select(select(single_w, n => t -> t == a),(1:n-1)..., n+1),
-                select(select(single_w, n => t -> t == b),(1:n-1)..., n+1))
+            g = t.table
+        elseif !t.kw[:compare]
+            g = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table)
         else
-            return w
+            single_w = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)),), t.table)
+            a, b = unique(single_w.index.columns[n])
+            g = innerjoin(select(select(single_w, n => t -> t == a),(1:n-1)..., n+1),
+                select(select(single_w, n => t -> t == b),(1:n-1)..., n+1))
         end
     else
         g = mapslices(t.table, [n, n+1]) do tt
@@ -101,6 +102,6 @@ function _group_apply(t::Table2Process)
             xtable = IndexedTable(collect(xaxis), fill(0.0, length(xaxis)), presorted = true)
             get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xtable, select(tt, n, n+1), t.kw[:compute_error])
         end
-        return filter(i -> all(isfinite.(i)), g)
     end
+    return filter(_isfinite, g)
 end
