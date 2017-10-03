@@ -8,10 +8,10 @@ It is based on the [IterableTables](https://github.com/davidanthoff/IterableTabl
 
 ## Installation
 
-This package is not registered yet, to install it run
+To install this package simply run:
 
 ```julia
-Pkg.clone("https://github.com/piever/GroupedErrors.jl.git")
+Pkg.add("GroupedErrors")
 ```
 
 at the Julia REPL.
