@@ -34,8 +34,8 @@ _locreg!(::Val{:discrete}, xtable, t; estimator = mean) = aggregate_vec(estimato
 Kernel density of `x`, computed along `xaxis`
 """
 function _density!(::Val{:continuous}, xtable, t; kwargs...)
-    xtable.data .=  KernelDensity.pdf(KernelDensity.kde(keys(t, 1); kwargs...), keys(xtable,1))
-    xtable
+    data =  KernelDensity.pdf(KernelDensity.kde(keys(t, 1); kwargs...), keys(xtable,1))
+    IndexedTable(xtable.index, data, presorted = true)
 end
 """
     `_density!(df, xaxis, x)`
@@ -55,8 +55,8 @@ _density_axis(column, axis_type::Symbol; kwargs...) =
 Cumulative density function of `x`, computed along `xaxis`
 """
 function _cumulative!(::Any, xtable, t)
-    xtable.data .= ecdf(keys(t,1))(keys(xtable,1))
-    xtable
+    data = ecdf(keys(t,1))(keys(xtable,1))
+    IndexedTable(xtable.index, data, presorted = true)
 end
 
 
