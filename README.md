@@ -186,12 +186,12 @@ If the set of preimplemented analysis functions turns out to be insufficient, it
 For example, let's say we want to study the survival function, which is `1-cdf`. Then we should define:
 
 ```julia
-survival!(args...) = broadcast(-, 1, GroupedErrors._cumulative!(args...))
+survival(args...) = broadcast(-, 1, GroupedErrors._cumulative(args...))
 @> school begin
     @splitby _.Sx
     @across _.School
     @x _.MAch
-    @y :custom survival!
+    @y :custom survival
     @plot
 end
 ```

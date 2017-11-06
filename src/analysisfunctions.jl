@@ -1,12 +1,12 @@
 ##### List of functions to analyze data
 
 """
-    `_locreg!(df, xaxis::Range, x, y; kwargs...)`
+    `_locreg(df, xaxis::Range, x, y; kwargs...)`
 
 Apply loess regression, training the regressor with `x` and `y` and
 predicting `xaxis`
 """
-function _locreg!(::Val{:continuous}, xtable, t; kwargs...)
+function _locreg(::Val{:continuous}, xtable, t; kwargs...)
     x, y = keys(t, 1), t.data
     within = filter(t -> minimum(x)<= t <= maximum(x), keys(xtable,1))
     if length(within) > 0
@@ -18,31 +18,30 @@ function _locreg!(::Val{:continuous}, xtable, t; kwargs...)
     return IndexedTable(within, prediction, presorted = true)
 end
 
-
 """
-    `_locreg!(df, xaxis, x, y; estimator = mean)`
+    `_locreg(df, xaxis, x, y; estimator = mean)`
 
 In the discrete case, the function computes the estimate of `y` for
 a given value of `x` using the function `estimator` (default is mean)
 """
-_locreg!(::Val{:discrete}, xtable, t; estimator = mean) = aggregate_vec(estimator, t)
-
+_locreg(::Val{:discrete}, xtable, t; estimator = mean) = aggregate_vec(estimator, t)
 
 """
-    `_density!(df,xaxis::Range, x; kwargs...)`
+    `_density(df,xaxis::Range, x; kwargs...)`
 
 Kernel density of `x`, computed along `xaxis`
 """
-function _density!(::Val{:continuous}, xtable, t; kwargs...)
-    xtable.data .=  KernelDensity.pdf(KernelDensity.kde(keys(t, 1); kwargs...), keys(xtable,1))
-    xtable
+function _density(::Val{:continuous}, xtable, t; kwargs...)
+    data = KernelDensity.pdf(KernelDensity.kde(keys(t, 1); kwargs...), keys(xtable,1))
+    IndexedTable(xtable.index, data, presorted = true)
 end
+
 """
-    `_density!(df, xaxis, x)`
+    `_density(df, xaxis, x)`
 
 Normalized histogram of `x` (which is discrete: every value is its own bin)
 """
-_density!(::Val{:discrete}, xtable, t) =
+_density(::Val{:discrete}, xtable, t) =
     leftjoin(xtable, aggregate_vec(v -> length(v)/sum(t.data), t))
 
 _density_axis(column, axis_type::Symbol; kwargs...) =
@@ -54,11 +53,10 @@ _density_axis(column, axis_type::Symbol; kwargs...) =
 
 Cumulative density function of `x`, computed along `xaxis`
 """
-function _cumulative!(::Any, xtable, t)
-    xtable.data .= ecdf(keys(t,1))(keys(xtable,1))
-    xtable
+function _cumulative(::Any, xtable, t)
+    data = ecdf(keys(t,1))(keys(xtable,1))
+    IndexedTable(xtable.index, data, presorted = true)
 end
-
 
 """
     `_hazard(df,xaxis, x; kwargs...)`
@@ -66,7 +64,7 @@ end
 Hazard rate of `x`, computed along `xaxis`. Keyword arguments are passed to
 the function computing the density
 """
-_hazard!(T, xtable, t; kwargs...) =
+_hazard(T, xtable, t; kwargs...) =
     broadcast((x,y) -> x/(1-y), _density!(T, xtable, t; kwargs...), _cumulative!(T, xtable, t))
 
 #### Method to compute and plot grouped error plots using the above functions
@@ -92,6 +90,6 @@ get_axis(column, axis_type::Symbol, compute_axis; kwargs...) =
 # the output is the y value for the given xvalues
 
 builtin_funcs = Dict(zip([:locreg, :density, :cumulative, :hazard],
-    [_locreg!, _density!, _cumulative!, _hazard!]))
+    [_locreg, _density, _cumulative, _hazard]))
 
 builtin_axis = Dict(:density => _density_axis)
