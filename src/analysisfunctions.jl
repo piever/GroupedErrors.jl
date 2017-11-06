@@ -64,8 +64,12 @@ end
 Hazard rate of `x`, computed along `xaxis`. Keyword arguments are passed to
 the function computing the density
 """
-_hazard(T, xtable, t; kwargs...) =
-    broadcast((x,y) -> x/(1-y), _density!(T, xtable, t; kwargs...), _cumulative!(T, xtable, t))
+function _hazard(T, xtable, t; kwargs...)
+    data_pdf = _density(T, xtable, t; kwargs...)
+    data_cdf = _cumulative(T, xtable, t)
+    bin_size = t.data[1]
+    broadcast((x,y) -> x/(1 + bin_size*x - y), data_pdf, data_cdf)
+end
 
 #### Method to compute and plot grouped error plots using the above functions
 
