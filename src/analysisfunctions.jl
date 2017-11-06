@@ -18,7 +18,6 @@ function _locreg(::Val{:continuous}, xtable, t; kwargs...)
     return IndexedTable(within, prediction, presorted = true)
 end
 
-
 """
     `_locreg(df, xaxis, x, y; estimator = mean)`
 
@@ -27,16 +26,16 @@ a given value of `x` using the function `estimator` (default is mean)
 """
 _locreg(::Val{:discrete}, xtable, t; estimator = mean) = aggregate_vec(estimator, t)
 
-
 """
     `_density(df,xaxis::Range, x; kwargs...)`
 
 Kernel density of `x`, computed along `xaxis`
 """
 function _density(::Val{:continuous}, xtable, t; kwargs...)
-    data =  KernelDensity.pdf(KernelDensity.kde(keys(t, 1); kwargs...), keys(xtable,1))
+    data = KernelDensity.pdf(KernelDensity.kde(keys(t, 1); kwargs...), keys(xtable,1))
     IndexedTable(xtable.index, data, presorted = true)
 end
+
 """
     `_density(df, xaxis, x)`
 
@@ -58,7 +57,6 @@ function _cumulative(::Any, xtable, t)
     data = ecdf(keys(t,1))(keys(xtable,1))
     IndexedTable(xtable.index, data, presorted = true)
 end
-
 
 """
     `_hazard(df,xaxis, x; kwargs...)`
