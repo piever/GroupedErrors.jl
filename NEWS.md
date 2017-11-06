@@ -8,3 +8,4 @@
 ## Bugfixes
 
 - `@compare` now works in combination with error bars
+- `_hazard` now handles the discrete and binned case correctly

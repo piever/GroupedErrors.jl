@@ -42,7 +42,13 @@ function process_axis_type!(cols, kw)
     (kw[:axis_type] == :auto) && (kw[:axis_type] = :continuous)
     kw[:axis_type] in [:discrete, :continuous] ||
         error("Axis type $(kw[:axis_type]) is not supported")
-    all(isnan.(y)) && (y .= bin_width)
+    if all(isnan.(y))
+        if kw[:axis_type] == :discrete
+            y .= bin_width
+        else
+            y .= 0.0
+        end
+    end
     Table2Process(IndexedTable(cols...), kw)
 end
 
