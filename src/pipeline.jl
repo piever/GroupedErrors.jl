@@ -55,9 +55,9 @@ function process_function!(t::Table2Process)
 end
 
 
-function get_grouped_error(trend, variation, f!, xtable, t, compute_error)
+function get_grouped_error(trend, variation, f, xtable, t, compute_error)
     if !isa(compute_error, Integer)
-        splitdata = mapslices(tt -> f!(xtable, select(tt,2)), t, 2)
+        splitdata = mapslices(tt -> f(xtable, select(tt,2)), t, 2)
     else
         ns = compute_error
         ref_data = select(t,2)
@@ -68,7 +68,7 @@ function get_grouped_error(trend, variation, f!, xtable, t, compute_error)
             nd = length(ref_data.data)
             perm = rand(1:nd,nd)
             permuted_data = IndexedTable(keys(ref_data,1)[rand(1:nd,nd)], ref_data.data[rand(1:nd,nd)])
-            f!(xtable, permuted_data)
+            f(xtable, permuted_data)
         end
     end
     nanfree = filter(isfinite, splitdata)
