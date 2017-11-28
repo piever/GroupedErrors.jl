@@ -8,6 +8,7 @@ using IndexedTables
 using TableTraits
 using MacroTools
 using StatsBase
+using NamedTuples
 
 export @splitby, @bootstrap, @across, @x, @y, @xy, @compare, @summarize, @set_attr, @>, @plot
 export ProcessedTable

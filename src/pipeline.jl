@@ -19,10 +19,14 @@ function pipeline(df::Table2Process)
 end
 
 function process_axis_type!(cols, kw)
+    n_grp = length(cols)- 3 - kw[:compare]
+    pkey_vec = vcat([Symbol(:s, i) for i in 1:n_grp], kw[:compare] ? [:compare, :across] : [:across])
+    col_names = vcat(pkey_vec, [:x, :y])
+    pkey_tup = tuple(pkey_vec...)
     x, y = cols[end-1:end]
     kw[:acrossall] && (cols[end-2] .= collect(1.:Float64(length(cols[end-2]))))
     at = kw[:axis_type]
-    (at == :pointbypoint) && return Table2Process(IndexedTable(Columns(cols[1:end-2]...), Columns(x, y)), kw)
+    (at == :pointbypoint) && return Table2Process(table(cols[1:end-2]..., x, y, names = col_names, pkey = pkey_tup), kw)
 
     if !(eltype(x)<:Real)
         (kw[:axis_type] in [:discrete, :auto]) || warn("Changing to discrete axis, x values are not real numbers!")
@@ -49,7 +53,7 @@ function process_axis_type!(cols, kw)
             y .= 0.0
         end
     end
-    Table2Process(IndexedTable(cols...), kw)
+    Table2Process(table(cols..., names = col_names, pkey = pkey_tup), kw)
 end
 
 function process_function!(t::Table2Process)
@@ -60,53 +64,56 @@ function process_function!(t::Table2Process)
     t.kw[:fclosure] = (args...) -> t.kw[:f](Val{t.kw[:axis_type]}(), args...; t.kw[:fkwargs]...)
 end
 
-
-function get_grouped_error(trend, variation, f, xtable, t, compute_error)
+function get_grouped_error(trend, variation, f, xaxis, split_table, compute_error)
     if !isa(compute_error, Integer)
-        splitdata = mapslices(tt -> f(xtable, select(tt,2)), t, 2)
+        subject_table = groupby(tt -> f(xaxis, table(tt)), split_table, flatten = true)
     else
         ns = compute_error
-        ref_data = select(t,2)
-        xaxis = columns(xtable, 1)
-        large_table = IndexedTable(repeat(collect(1:ns), inner = length(xaxis)),
-            repeat(xaxis, outer = ns), zeros(ns*length(xaxis)), presorted = true)
-        splitdata = mapslices(large_table, 1) do tt
-            nd = length(ref_data.data)
-            perm = rand(1:nd,nd)
-            permuted_data = IndexedTable(keys(ref_data,1)[rand(1:nd,nd)], ref_data.data[rand(1:nd,nd)])
-            f(xtable, permuted_data)
+        large_table = table(repeat(collect(1:ns), inner = length(xaxis)),
+            repeat(xaxis, outer = ns), zeros(ns*length(xaxis)), names = [:across, :x, :y],
+            pkey = :across, presorted = true)
+        subject_table = groupby(large_table, flatten = true) do tt
+            nd = length(split_table)
+            perm = rand(1:nd, nd)
+            permuted_data = table(columns(split_table, :x)[perm], columns(split_table, :x)[perm],
+                names = [:x, :y])
+            f(xaxis, permuted_data)
         end
     end
-    nanfree = filter(isfinite, splitdata)
+    nanfree = filter(_isfinite, subject_table)
     if compute_error == :none
-        return reducedim((x,y)->y, nanfree, 1)
+        return select(nanfree, (:x, :y))
     else
-        return reducedim_vec(i -> (trend(i), variation(i)), nanfree, 1)
+        return groupby((:y => trend, :err => variation), nanfree, :x, select = :y)
     end
 end
 
-_isfinite(t) = isfinite(t)
-_isfinite(t::Tuple) = all(_isfinite.(t))
+_isfinite(t) = true
+_isfinite(t::Number) = isfinite(t)
+_isfinite(t::Union{Tuple, NamedTuple}) = all(_isfinite.(t))
 
 function _group_apply(t::Table2Process)
-    n = length(t.table.index.columns)-1
+    n = eltype(t.table).parameters.length-3
     if t.kw[:axis_type] == :pointbypoint
         if (t.kw[:xreduce] == false) || (t.kw[:yreduce] == false)
             t.kw[:compare] && error("can't compare without xreduce and yreduce")
             g = t.table
         elseif !t.kw[:compare]
-            g = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)), t.kw[:yreduce](map(i->i[2], v))), t.table)
+            g = groupby((:x => :x => t.kw[:xreduce], :y => :y => t.kw[:yreduce]), t.table)
         else
-            single_w = aggregate_vec(v -> (t.kw[:xreduce](map(i->i[1], v)),), t.table)
-            a, b = unique(single_w.index.columns[n])
-            g = innerjoin(select(select(single_w, n => t -> t == a),(1:n-1)..., n+1),
-                select(select(single_w, n => t -> t == b),(1:n-1)..., n+1))
+            single_w = groupby((:xy => t.kw[:xreduce], ), t.table, select = :x)
+            a, b = unique(column(single_w, :compare))
+            xtable = renamecol(filter(i -> i.compare == a, single_w), :xy, :x)
+            ytable = renamecol(filter(i -> i.compare == b, single_w), :xy, :y)
+            pkey_tup = (listsplits(t)..., :across)
+            g = join(xtable, ytable, lkey = pkey_tup, rkey = pkey_tup,
+                lselect = :x, rselect = :y)
         end
     else
-        g = mapslices(t.table, [n, n+1]) do tt
-            xaxis = get_axis(keys(tt, n+1), t.kw[:axis_type], t.kw[:compute_axis])
-            xtable = IndexedTable(collect(xaxis), fill(0.0, length(xaxis)), presorted = true)
-            get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xtable, select(tt, n, n+1), t.kw[:compute_error])
+        g = groupby(t.table, (listsplits(t)...), select = (:across, :x, :y), flatten = true) do tt
+            split_table = table(tt, pkey = :across, presorted = true)
+            xaxis = get_axis(columns(split_table, :x), t.kw[:axis_type], t.kw[:compute_axis])
+            get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xaxis, split_table, t.kw[:compute_error])
         end
     end
     return filter(_isfinite, g)

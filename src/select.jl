@@ -77,6 +77,9 @@ end
 ProcessedTable(t::Table2Process) = pipeline(t)
 ProcessedTable(s::AbstractSelector) = ProcessedTable(Table2Process(s))
 
+nsplits(t::Union{Table2Process, ProcessedTable}) = count(t -> startswith(t, "s"), string.(colnames(t.table)))
+listsplits(t::Union{Table2Process, ProcessedTable}) = [Symbol(:s, i) for i = 1:nsplits(t)]
+
 _isnull(x) = false
 _isnull(x::DataValue) = isnull(x)
 
