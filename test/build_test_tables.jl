@@ -1,6 +1,5 @@
-tables = []
-
 school = RDatasets.dataset("mlmRev","Hsb82")
+tables = []
 
 #Test scatter plot
 processed_table = @> school begin
@@ -12,6 +11,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t1"))
 
 #Test different estimator
 processed_table = @> school begin
@@ -23,6 +23,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t2"))
 
 #Test xy comparison
 processed_table = @> school begin
@@ -34,6 +35,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t3"))
 
 #Test cumulative
 processed_table = @> school begin
@@ -45,6 +47,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t4"))
 
 #Test density
 processed_table = @> school begin
@@ -56,6 +59,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t5"))
 
 #Test locreg
 processed_table = @> school begin
@@ -67,6 +71,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t6"))
 
 #Test binning
 processed_table = @> school begin
@@ -77,6 +82,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t7"))
 
 #test bootstrap
 processed_table = @> school begin
@@ -88,6 +94,7 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t8"))
 
 #test continuous locreg
 processed_table = @> school begin
@@ -98,3 +105,4 @@ processed_table = @> school begin
 end
 
 push!(tables, processed_table.table)
+#Dagger.save(table(processed_table.table, chunks = 1), joinpath(@__DIR__, "tables", "t9"))
