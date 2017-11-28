@@ -1,6 +1,6 @@
 using GroupedErrors
 using Base.Test
-using DataFrames, RDatasets, JuliaDB, IndexedTables
+using JuliaDB, IndexedTables
 
 include("build_test_tables.jl")
 
@@ -10,7 +10,7 @@ for i in 1:length(tables)
     println(test_table)
     stored_table = collect(Dagger.load(joinpath(@__DIR__, "tables", "t$i")))
     println(stored_table)
-    atol = i == 8 ? 1e-1 : 1e-6
+    atol = i == 8 ? 1e-1 : 1e-4
     for j in colnames(stored_table)
         if eltype(columns(stored_table, j)) == Float64
             @test columns(stored_table, j) ≈ columns(test_table, j) atol = atol

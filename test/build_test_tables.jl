@@ -1,4 +1,4 @@
-school = RDatasets.dataset("mlmRev","Hsb82")
+school = collect(Dagger.load(joinpath(@__DIR__, "tables", "school")))
 tables = []
 
 #Test scatter plot
