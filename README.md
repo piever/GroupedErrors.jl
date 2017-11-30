@@ -186,7 +186,10 @@ If the set of preimplemented analysis functions turns out to be insufficient, it
 For example, let's say we want to study the survival function, which is `1-cdf`. Then we should define:
 
 ```julia
-survival(args...) = broadcast(-, 1, GroupedErrors._cumulative(args...))
+function survival(T, xaxis, t)
+    data = StatsBase.ecdf(columns(t, :x))(xaxis)
+    GroupedErrors.tablify(xaxis, 1 .- data)
+end
 @> school begin
     @splitby _.Sx
     @across _.School
@@ -245,12 +248,12 @@ without repeating the statistical analysis (especially useful when the analysis 
 
 ## Query compatibility
 
-Of course the amount of data preprocessing in this package is very limited and misses important features (for example data selection). To address this issue, this package is compatible with the excellent querying package [Query.jl](https://github.com/davidanthoff/Query.jl). Starting with Query.jl version 0.7, the Query standalone macros (such as `@where`, `@select` etc.) can be combined with a GroupedErrors.jl pipeline as follows:
+Of course the amount of data preprocessing in this package is very limited and misses important features (for example data selection). To address this issue, this package is compatible with the excellent querying package [Query.jl](https://github.com/davidanthoff/Query.jl). If you are using Query.jl version 0.8 or above, the Query standalone macros (such as `@filter`, `@map` etc.) can be combined with a GroupedErrors.jl pipeline as follows:
 
 ```julia
 using Query
 @> school begin
-    @where _.SSS > 0.5
+    @filter _.SSS > 0.5
     @splitby _.Minrty
     @x _.MAch
     @y :density
