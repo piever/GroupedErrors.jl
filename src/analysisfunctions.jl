@@ -1,3 +1,8 @@
+#### Auxiliary function
+
+tablify(xaxis, data) = table(collect(xaxis), data, names = [:x, :y], pkey = :x, presorted = true)
+
+
 ##### List of functions to analyze data
 
 """
@@ -15,7 +20,7 @@ function _locreg(::Val{:continuous}, xaxis, t; kwargs...)
     else
         prediction = Float64[]
     end
-    return table(within, prediction, names = [:x, :y])
+    tablify(within, prediction)
 end
 
 """
@@ -24,7 +29,7 @@ end
 In the discrete case, the function computes the estimate of `y` for
 a given value of `x` using the function `estimator` (default is mean)
 """
-_locreg(::Val{:discrete}, xaxis, t; estimator = mean) = groupby((:y => mean, ), t, :x, select = :y)
+_locreg(::Val{:discrete}, xaxis, t; estimator = mean) = groupby((:y => estimator, ), t, :x, select = :y)
 
 """
     `_density(df,xaxis::Range, x; kwargs...)`
@@ -33,7 +38,7 @@ Kernel density of `x`, computed along `xaxis`
 """
 function _density(::Val{:continuous}, xaxis, t; kwargs...)
     data = KernelDensity.pdf(KernelDensity.kde(columns(t, :x); kwargs...), xaxis)
-    table(collect(xaxis), data, names = [:x, :y], pkey = :x, presorted = true)
+    tablify(xaxis, data)
 end
 
 """
@@ -59,7 +64,7 @@ Cumulative density function of `x`, computed along `xaxis`
 """
 function _cumulative(T, xaxis, t)
     data = ecdf(columns(t, :x))(xaxis)
-    table(collect(xaxis), data, names = [:x, :y], pkey = :x, presorted = true)
+    tablify(xaxis, data)
 end
 
 """
@@ -72,8 +77,7 @@ function _hazard(T, xaxis, t; kwargs...)
     data_pdf = columns(_density(T, xaxis, t; kwargs...), :y)
     data_cdf = columns(_cumulative(T, xaxis, t), :y)
     bin_size = t[1].y
-    table(collect(xaxis), @.(data_pdf/(1 + bin_size * data_pdf - data_cdf)),
-        names = [:x, :y], pkey = :x, presorted = true)
+    tablify(xaxis, @.(data_pdf/(1 + bin_size * data_pdf - data_cdf)))
 end
 
 #### Method to compute and plot grouped error plots using the above functions
