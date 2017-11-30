@@ -2,15 +2,7 @@ using GroupedErrors
 using Base.Test
 using JuliaDB, IndexedTables
 
-include("build_test_tables.jl")
-
-for i in 1:length(tables)
-    println(i)
-    test_table = tables[i]
-    println(test_table)
-    stored_table = collect(Dagger.load(joinpath(@__DIR__, "tables", "t$i")))
-    println(stored_table)
-    atol = i == 8 ? 1e-1 : 1e-4
+function check_equality(stored_table, test_table, atol)
     for j in colnames(stored_table)
         if eltype(columns(stored_table, j)) == Float64
             @test columns(stored_table, j) ≈ columns(test_table, j) atol = atol
@@ -20,6 +12,33 @@ for i in 1:length(tables)
     end
 end
 
+include("build_test_tables.jl")
+
+for i in 1:length(tables)
+    println(i)
+    test_table = tables[i]
+    println(test_table)
+    stored_table = collect(Dagger.load(joinpath(@__DIR__, "tables", "t$i")))
+    println(stored_table)
+    atol = i == 8 ? 1e-1 : 1e-4
+    check_equality(stored_table, test_table, atol)
+end
+
+processed_table = @> school begin
+    @splitby(_.Minrty)
+    @x(_.MAch, :continuous)
+    @y(_.SSS)
+    ProcessedTable
+end
+
+processed_table_col = @> GroupedErrors.ColumnSelector(school) begin
+    GroupedErrors._splitby(:Minrty)
+    GroupedErrors._x(:MAch, :continuous)
+    GroupedErrors._y(:locreg, :SSS)
+    ProcessedTable
+end
+
+check_equality(processed_table.table, processed_table_col.table, 1e-6)
 
 processed_table = @> school begin
     @splitby (_.Minrty, _.Sx)
