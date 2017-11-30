@@ -77,6 +77,11 @@ end
 ProcessedTable(t::Table2Process) = pipeline(t)
 ProcessedTable(s::AbstractSelector) = ProcessedTable(Table2Process(s))
 
+function Base.filter(f::Function, p::ProcessedTable)
+    filtered_table = filter(f, p.table)
+    ProcessedTable(filtered_table, p.kw)
+end
+
 nsplits(t::Union{Table2Process, ProcessedTable}) = count(t -> startswith(t, "s"), string.(colnames(t.table)))
 listsplits(t::Union{Table2Process, ProcessedTable}) = [Symbol(:s, i) for i = 1:nsplits(t)]
 

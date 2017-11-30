@@ -82,6 +82,35 @@ function _x(s::AbstractSelector, f, args...)
     return s2
 end
 
+
+macro xlims(s, arg)
+    p = helper_replace_anon_func_syntax(arg)
+    Expr(:call, :_xlims, esc(s), esc(p))
+end
+
+_xlims(s, p) = _xlims(ProcessedTable(s), p)
+function _xlims(s::ProcessedTable, p)
+    filter(s) do i
+        lower, upper = p(i)
+        x = i.x isa Tuple ? i.x[1] : i.x
+        lower <= x <= upper
+    end
+end
+
+macro ylims(s, arg)
+    p = helper_replace_anon_func_syntax(arg)
+    Expr(:call, :_ylims, esc(s), esc(p))
+end
+
+_ylims(s, p) = _ylims(ProcessedTable(s), p)
+function _ylims(s::ProcessedTable, p)
+    filter(s) do i
+        lower, upper = p(i)
+        y = i.y isa Tuple ? i.y[1] : i.y
+        lower <= y <= upper
+    end
+end
+
 _kw(ex) = (isa(ex, Expr) && ex.head == :(=)) ? Expr(:kw, ex.args...) : ex
 
 store_kws(; kwargs...) = kwargs

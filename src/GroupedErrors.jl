@@ -11,6 +11,7 @@ using StatsBase
 using NamedTuples
 
 export @splitby, @bootstrap, @across, @x, @y, @xy, @compare, @summarize, @set_attr, @>, @plot
+export @xlims, @ylims
 export ProcessedTable
 
 include("select.jl")
