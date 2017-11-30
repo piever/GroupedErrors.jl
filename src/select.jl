@@ -38,6 +38,9 @@ Table2Process(df) = Table2Process(df, Dict{Symbol, Any}())
 tuplify(x::Tuple, args...) = (x..., args...)
 tuplify(x, args...) = (x, args...)
 
+columnify(t::IndexedTables.AbstractIndexedTable) = columns(dropna(t))
+columnify(t) = columnify(table(convert(Columns, t)))
+
 function Table2Process(s::Selector)
     enumerable = TableTraits.getiterator(s.table)
     T = eltype(enumerable)
@@ -46,10 +49,8 @@ function Table2Process(s::Selector)
     else
         select_func = t -> tuplify(s.splitby(t), s.across(t), s.x(t), s.y(t))
     end
-    column_types = Base._return_type(select_func, Tuple{T,}).parameters
-    columns = Tuple(_type(S)[] for S in column_types)
-    fill_cols!(columns, enumerable, select_func)
-    Table2Process(columns, s.kw)
+    tuple_vec = map(select_func, enumerable)
+    Table2Process(columnify(tuple_vec), s.kw)
 end
 
 getcolumn(t::IndexedTables.AbstractIndexedTable, s) = columns(t, s)
@@ -91,35 +92,3 @@ end
 
 nsplits(t::Union{Table2Process, ProcessedTable}) = count(t -> startswith(t, "s"), string.(colnames(t.table)))
 listsplits(t::Union{Table2Process, ProcessedTable}) = [Symbol(:s, i) for i = 1:nsplits(t)]
-
-_isnull(x) = false
-_isnull(x::DataValue) = isnull(x)
-
-_get(x) = x
-_get(x::DataValue) = get(x)
-
-_type(x) = x
-_type(x::Type{DataValue{T}}) where T = T
-
-
-@generated function fill_cols!(columns, enumerable, select_func)
-    push_exprs = Expr(:block)
-    for i in find(collect(columns.types) .!= Void)
-        ex = quote
-            push!(columns[$i], _get(j[$i]))
-        end
-        push!(push_exprs.args, ex)
-    end
-    cond_push_exprs = quote
-        j = select_func(i)
-        if !any(_isnull, j)
-            $push_exprs
-        end
-    end
-
-    quote
-        for i in enumerable
-            $cond_push_exprs
-        end
-    end
-end
