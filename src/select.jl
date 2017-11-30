@@ -49,7 +49,7 @@ function Table2Process(s::Selector)
     else
         select_func = t -> tuplify(s.splitby(t), s.across(t), s.x(t), s.y(t))
     end
-    tuple_vec = map(select_func, enumerable)
+    tuple_vec = [select_func(i) for i in enumerable]
     Table2Process(columnify(tuple_vec), s.kw)
 end
 

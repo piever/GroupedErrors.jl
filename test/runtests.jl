@@ -24,15 +24,17 @@ for i in 1:length(tables)
     check_equality(stored_table, test_table, atol)
 end
 
+split_vars = [:Minrty, :Sx]
+
 processed_table = @> school begin
-    @splitby(_.Minrty)
+    @splitby(Tuple(getfield(_, s) for s in split_vars))
     @x(_.MAch, :continuous)
     @y(_.SSS)
     ProcessedTable
 end
 
 processed_table_col = @> GroupedErrors.ColumnSelector(school) begin
-    GroupedErrors._splitby(:Minrty)
+    GroupedErrors._splitby(split_vars)
     GroupedErrors._x(:MAch, :continuous)
     GroupedErrors._y(:locreg, :SSS)
     ProcessedTable
