@@ -51,20 +51,23 @@ function Table2Process(s::Selector)
     Table2Process(columns, s.kw)
 end
 
+getcolumn(t::IndexedTables.AbstractIndexedTable, s) = columns(t, s)
+getcolumn(t, s) = getindex(t, s)
+
 function Table2Process(s::ColumnSelector)
     if s.splitby == Symbol[]
         splitter = [fill("y1", size(s.table, 1))]
     elseif isa(s.splitby, Symbol)
-        splitter = [getindex(s.table, s.splitby)]
+        splitter = [getcolumn(s.table, s.splitby)]
     else
-        splitter = getindex.(s.table, s.splitby)
+        splitter = getcolumn.(s.table, s.splitby)
     end
-    across_col = s.across == nothing ? fill(0.0, size(s.table, 1)) : getindex(s.table, s.across)
-    y_col = s.y == nothing? fill(NaN, size(s.table, 1)) : getindex(s.table, s.y)
+    across_col = s.across == nothing ? fill(0.0, size(s.table, 1)) : getcolumn(s.table, s.across)
+    y_col = s.y == nothing? fill(NaN, size(s.table, 1)) : getcolumn(s.table, s.y)
     if s.compare == nothing
-        columns = tuple(splitter..., across_col, getindex(s.table, s.x), y_col)
+        columns = tuple(splitter..., across_col, getcolumn(s.table, s.x), y_col)
     else
-        columns = tuple(splitter..., getindex.(s.table, s.compare), across_col, getindex(s.table, s.x), y_col)
+        columns = tuple(splitter..., getcolumn.(s.table, s.compare), across_col, getcolumn(s.table, s.x), y_col)
     end
     Table2Process(columns, s.kw)
 end
