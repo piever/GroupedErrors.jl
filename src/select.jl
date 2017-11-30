@@ -33,17 +33,18 @@ struct Table2Process{T}
     kw::Dict{Symbol, Any}
 end
 
-Table2Process(table) = Table2Process(table, Dict{Symbol, Any}())
+Table2Process(df) = Table2Process(df, Dict{Symbol, Any}())
+
+tuplify(x::Tuple, args...) = (x..., args...)
+tuplify(x, args...) = (x, args...)
 
 function Table2Process(s::Selector)
     enumerable = TableTraits.getiterator(s.table)
     T = eltype(enumerable)
-    splitter = Base._return_type(s.splitby, Tuple{T,})<:Tuple ?
-        t -> s.splitby(t) : t -> (s.splitby(t),)
     if s.kw[:compare]
-        select_func = t -> (splitter(t)..., s.compare(t), s.across(t), s.x(t), s.y(t))
+        select_func = t -> tuplify(s.splitby(t), s.compare(t), s.across(t), s.x(t), s.y(t))
     else
-        select_func = t -> (splitter(t)..., s.across(t), s.x(t), s.y(t))
+        select_func = t -> tuplify(s.splitby(t), s.across(t), s.x(t), s.y(t))
     end
     column_types = Base._return_type(select_func, Tuple{T,}).parameters
     columns = Tuple(_type(S)[] for S in column_types)
