@@ -2,6 +2,10 @@
 
 tablify(xaxis, data) = table(collect(xaxis), data, names = [:x, :y], pkey = :x, presorted = true)
 
+function tablify(xaxis, data::IndexedTables.AbstractIndexedTable, val = 0.0)
+    extra_axis = setdiff(xaxis, columns(data, :x))
+    merge(tablify(extra_axis, fill(val, length(extra_axis))), data)
+end
 
 ##### List of functions to analyze data
 
@@ -46,11 +50,10 @@ end
 
 Normalized histogram of `x` (which is discrete: every value is its own bin)
 """
-function _density(::Val{:discrete}, xaxis, t)
-    s = reduce(+, t, select = :y)
+function _density(::Val{:discrete}, xaxis, t; normalize = true)
+    s = normalize ? reduce(+, t, select = :y) : 1.0
     small_table = groupby((:y => v -> length(v)/s, ), t, :x, select = :y)
-    extra = setdiff(xaxis, columns(small_table, :x))
-    merge(table(extra, fill(0.0, length(extra)), names = [:x, :y], pkey = :x), small_table)
+    tablify(xaxis, small_table, 0.0)
 end
 
 _density_axis(column, axis_type::Symbol; kwargs...) =
