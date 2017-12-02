@@ -61,7 +61,7 @@ getlength(t) = size(t, 1)
 
 function Table2Process(s::ColumnSelector)
     if s.splitby == Symbol[]
-        splitter = [fill("y1", size(s.table, 1))]
+        splitter = [fill("y1", getlength(s.table))]
     elseif isa(s.splitby, Symbol)
         splitter = [getcolumn(s.table, s.splitby)]
     else
