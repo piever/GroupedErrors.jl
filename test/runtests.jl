@@ -53,3 +53,20 @@ processed_table = @> school begin
 end
 
 @test [t[1] for t in processed_table.kw[:plot_kwargs]] == [:linestyle, :color]
+
+na_school_vec = convert(Vector{GroupedErrors.DataValue{Float64}}, columns(school, :MAch))
+na_school_vec[1] = GroupedErrors.DataValue{Float64}()
+
+table2process_nafree = @> setcol(school, :MAch, na_school_vec) begin
+    @x(_.MAch, :continuous)
+    @y(_.SSS)
+    GroupedErrors.Table2Process
+end
+
+table2process = @> school begin
+    @x(_.MAch, :continuous)
+    @y(_.SSS)
+    GroupedErrors.Table2Process
+end
+
+check_equality(table(table2process.table...)[2:end], table(table2process_nafree.table...), 1e-8)
