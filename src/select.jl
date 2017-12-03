@@ -38,8 +38,13 @@ Table2Process(df) = Table2Process(df, Dict{Symbol, Any}())
 tuplify(x::Tuple, args...) = (x..., args...)
 tuplify(x, args...) = (x, args...)
 
-columnify(t::IndexedTables.AbstractIndexedTable) = columns(dropna(t))
-columnify(t) = columnify(table(convert(Columns, t)))
+_get(t::Tuple) = map(_get, t)
+_get(t) = t
+_get(t::DataValue) = get(t)
+
+_nafree(t::Tuple) = all(_nafree, t)
+_nafree(t) = true
+_nafree(t::DataValue) = !isnull(t)
 
 function Table2Process(s::Selector)
     enumerable = TableTraits.getiterator(s.table)
@@ -49,8 +54,8 @@ function Table2Process(s::Selector)
     else
         select_func = t -> tuplify(s.splitby(t), s.across(t), s.x(t), s.y(t))
     end
-    tuple_vec = [select_func(i) for i in enumerable]
-    Table2Process(columnify(tuple_vec), s.kw)
+    tuple_vec = map(_get, Iterators.filter(_nafree, (select_func(i) for i in enumerable)))
+    Table2Process(columns(convert(Columns, tuple_vec)), s.kw)
 end
 
 getcolumn(t::IndexedTables.AbstractIndexedTable, s) = columns(t, s)
