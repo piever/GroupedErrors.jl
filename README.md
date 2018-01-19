@@ -66,6 +66,7 @@ end
 One can also give a tuple of 2 functions where the second should represent the error:
 
 ```julia
+using StatsBase
 @> school begin
     @splitby _.Sx
     @across _.School
