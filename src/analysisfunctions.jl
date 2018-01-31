@@ -35,9 +35,10 @@ a given value of `x` using the function `estimator` (default is mean)
 """
 function _locreg(::Val{:discrete}, xaxis, t; estimator = mean)
     if column(t, :y)[1] isa ShiftedArray
-        new_est = t -> isempty(t) ? NaN : estimator(t)
-        v = reduce_vec(new_est, column(t, :y), xaxis)
-        table(xaxis, v, names = [:x, :y])
+        v = reduce_vec(estimator, column(t, :y), xaxis)
+        inds = find(!ismissing, v)
+        table(xaxis[inds], convert(Vector{Float64}, view(v, inds)), names = [:x, :y],
+            copy = false, presorted = true)
     else
         groupby((:y => estimator, ), t, :x, select = :y)
     end
