@@ -9,6 +9,7 @@ using TableTraits
 using MacroTools
 using StatsBase
 using NamedTuples
+using ShiftedArrays, Missings
 
 export @splitby, @bootstrap, @across, @x, @y, @xy, @compare, @summarize, @set_attr, @>, @plot
 export @xlims, @ylims

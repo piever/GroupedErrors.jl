@@ -33,7 +33,16 @@ end
 In the discrete case, the function computes the estimate of `y` for
 a given value of `x` using the function `estimator` (default is mean)
 """
-_locreg(::Val{:discrete}, xaxis, t; estimator = mean) = groupby((:y => estimator, ), t, :x, select = :y)
+function _locreg(::Val{:discrete}, xaxis, t; estimator = mean)
+    if column(t, :y)[1] isa ShiftedArray
+        v = reduce_vec(estimator, column(t, :y), xaxis)
+        inds = find(!ismissing, v)
+        table(xaxis[inds], convert(Vector{Float64}, view(v, inds)), names = [:x, :y],
+            copy = false, presorted = true)
+    else
+        groupby((:y => estimator, ), t, :x, select = :y)
+    end
+end
 
 """
     `_density(df,xaxis::Range, x; kwargs...)`
@@ -85,6 +94,7 @@ end
 
 #### Method to compute and plot grouped error plots using the above functions
 
+get_axis(column::AbstractArray{<:Range}) = column[1]
 get_axis(column) = sort!(union(column))
 get_axis(column, npoints::Int64) = linspace(extrema(column)..., npoints)
 

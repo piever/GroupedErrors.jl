@@ -46,7 +46,7 @@ function process_axis_type!(cols, kw)
     (kw[:axis_type] == :auto) && (kw[:axis_type] = :continuous)
     kw[:axis_type] in [:discrete, :continuous] ||
         error("Axis type $(kw[:axis_type]) is not supported")
-    if all(isnan.(y))
+    if all(t -> (t isa Real) && isnan(t), y)
         if kw[:axis_type] == :discrete
             y .= bin_width
         else
@@ -66,13 +66,13 @@ end
 
 function get_grouped_error(trend, variation, f, xaxis, split_table, compute_error)
     if !isa(compute_error, Integer)
-        subject_table = groupby(tt -> f(xaxis, table(tt)), split_table, flatten = true)
+        subject_table = groupby(tt -> f(xaxis, table(tt)), split_table, flatten = true, select = IndexedTables.valuenames(split_table))
     else
         ns = compute_error
         large_table = table(repeat(collect(1:ns), inner = length(xaxis)),
             repeat(xaxis, outer = ns), zeros(ns*length(xaxis)), names = [:across, :x, :y],
             pkey = :across, presorted = true)
-        subject_table = groupby(large_table, flatten = true) do tt
+        subject_table = groupby(large_table, flatten = true, select = IndexedTables.valuenames(large_table)) do tt
             nd = length(split_table)
             perm = rand(1:nd, nd)
             permuted_data = table(columns(split_table, :x)[perm], columns(split_table, :x)[perm],

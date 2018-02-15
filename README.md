@@ -164,6 +164,29 @@ end
 
 ![density](https://user-images.githubusercontent.com/6333339/29373096-06317b50-82a5-11e7-900f-d6c183977ab8.png)
 
+### Analysis of time varying signals
+
+GroupedErrors allows (experimentally! use at your own risk!) aligning time varying signal using [ShiftedArrays](https://github.com/piever/ShiftedArrays.jl) (at the moment ShiftedArray unreleased version is required, will try to release as soon as possible). You need to build a column of ShiftedArrays as follows. Let's say that `v` is your vector of signals and indices `inds = [13, 456, 607]` are those where meaningful event happens (assuming your dataset only have 3 rows, of course in practice `inds` will be much longer). You can create a column of `ShiftedArrays` with:
+
+```julia
+[ShiftedArray(v, -i) for i in [13, 456, 607]]
+```
+
+and add it to your data. GroupedErrors will then be able to leverage reducing functions from ShiftedArrays to run analysis. In this example dataset we take the column `:signal` to be the vector of `ShiftedArrays`, `:subject` is our grouping variable and `:treatment` is some variable we will use to split the data:
+
+```julia
+df = JuliaDB.load(joinpath(Pkg.dir("GroupedErrors", "test", "tables"), "test_signal"))
+@> df begin
+    @splitby _.treatment
+    @across _.subject
+    @x -100:100 :discrete
+    @y _.signal
+    @plot plot() :ribbon
+end
+```
+
+![signal](https://user-images.githubusercontent.com/6333339/36281283-0cb52924-1295-11e8-87aa-b01160e3aa5e.png)
+
 ### Non-parametric bootstrap error computation
 
 Rather than computing the variability across groups, it is also possible to compute the overall variability using non-parametric [bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics)#Case_resampling) using the `@bootstrap` macro. The analysis will be run as many times as the specified number (defaults to 1000) on a fake dataset sampled with replacement from the actual data. Estimate and error are computed as mean and std of the different outcomes. Example:
