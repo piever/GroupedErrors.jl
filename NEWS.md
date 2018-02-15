@@ -1,6 +1,6 @@
 # GroupedErrors Release Notes
 
-## v.0.2
+## v.0.1.2
 
 - Compatible with new `IndexedTables` grouping mechanism
 - Support for alignment analysis of time varying signals
