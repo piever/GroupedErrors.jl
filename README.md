@@ -166,17 +166,35 @@ end
 
 ### Analysis of time varying signals
 
-GroupedErrors allows (experimentally! use at your own risk!) aligning time varying signal using [ShiftedArrays](https://github.com/piever/ShiftedArrays.jl) (at the moment ShiftedArray unreleased version is required, will try to release as soon as possible). You need to build a column of ShiftedArrays as follows. Let's say that `v` is your vector of signals and indices `inds = [13, 456, 607]` are those where meaningful event happens (assuming your dataset only have 3 rows, of course in practice `inds` will be much longer). You can create a column of `ShiftedArrays` with:
+GroupedErrors allows (experimentally! use at your own risk!) aligning time varying signal using [ShiftedArrays](https://github.com/piever/ShiftedArrays.jl). You need to build a column of ShiftedArrays as follows. Let's say that `v` is your vector of signals and indices `inds = [13, 456, 607]` are those where meaningful event happens (assuming your dataset only have 3 rows, of course in practice `inds` will be much longer). You can create a column of `ShiftedArrays` with:
 
 ```julia
 [ShiftedArray(v, -i) for i in [13, 456, 607]]
 ```
 
-and add it to your data. GroupedErrors will then be able to leverage reducing functions from ShiftedArrays to run analysis. In this example dataset we take the column `:signal` to be the vector of `ShiftedArrays`, `:subject` is our grouping variable and `:treatment` is some variable we will use to split the data:
+and add it to your data. GroupedErrors will then be able to leverage reducing functions from ShiftedArrays to run analysis.
+
+Let's run the following example step by step:
 
 ```julia
-df = JuliaDB.load(joinpath(Pkg.dir("GroupedErrors", "test", "tables"), "test_signal"))
-@> df begin
+#load the data
+using JuliaDB
+df = JuliaDB.load(joinpath(Pkg.dir("GroupedErrors", "test", "tables"), "test_data"))
+#load the time varying signal as a 1 dimentional array
+signal = vec(readdlm(joinpath(Pkg.dir("GroupedErrors", "test", "tables"), "signal.txt")))
+```
+
+Now, the column `event` gives the indices on which we want to align, So, to create a column of `ShiftedArrays` we do:
+
+```julia
+using ShiftedArrays
+dfs = pushcol(df, :signal, [ShiftedArray(signal, -i.event) for i in df])
+```
+
+We are all set to plot! `:subject` is our grouping variable and `:treatment` is some variable we will use to split the data:
+
+```julia
+@> dfs begin
     @splitby _.treatment
     @across _.subject
     @x -100:100 :discrete

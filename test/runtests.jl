@@ -1,6 +1,7 @@
 using GroupedErrors
 using Base.Test
 using JuliaDB, IndexedTables
+using ShiftedArrays
 
 function check_equality(stored_table, test_table, atol)
     for j in colnames(stored_table)
@@ -70,3 +71,18 @@ table2process = @> school begin
 end
 
 check_equality(table(table2process.table...)[2:end], table(table2process_nafree.table...), 1e-8)
+
+v = [1, 2, 3, 4, 5, 6, 7, 8]
+
+t = table([1, 2], ShiftedArray.((v,), [-3, -7]), names = [:x, :y])
+
+res = @> t begin
+    @across _.x
+    @x -1:1 :discrete
+    @y _.y
+    ProcessedTable
+end
+expected_res = table(@NT(s1 = fill("y1", 3), x = -1:1, y = [4., 5., 6.], err = fill(2., 3)),
+    pkey = :s1)
+
+check_equality(expected_res, res.table, 1e-8)
