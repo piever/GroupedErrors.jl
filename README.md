@@ -179,7 +179,7 @@ Let's run the following example step by step:
 ```julia
 #load the data
 using JuliaDB
-df = JuliaDB.load(joinpath(Pkg.dir("GroupedErrors", "test", "tables"), "test_data"))
+df = loadtable(joinpath(Pkg.dir("GroupedErrors", "test", "tables"), "test_data.csv"))
 #load the time varying signal as a 1 dimentional array
 signal = vec(readdlm(joinpath(Pkg.dir("GroupedErrors", "test", "tables"), "signal.txt")))
 ```
