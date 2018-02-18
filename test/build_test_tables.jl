@@ -1,4 +1,4 @@
-school = collect(Dagger.load(joinpath(@__DIR__, "tables", "school")))
+school = loadtable(joinpath(@__DIR__, "tables", "school.csv"))
 tables = []
 
 #Test scatter plot
