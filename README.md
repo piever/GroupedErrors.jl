@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/piever/GroupedErrors.jl.svg?branch=master)](https://travis-ci.org/piever/GroupedErrors.jl)
 [![codecov.io](http://codecov.io/github/piever/GroupedErrors.jl/coverage.svg?branch=master)](http://codecov.io/github/piever/GroupedErrors.jl?branch=master)
+[![GroupedErrors](http://pkg.julialang.org/badges/GroupedErrors_0.6.svg)](http://pkg.julialang.org/?pkg=GroupedErrors)
+[![GroupedErrors](http://pkg.julialang.org/badges/GroupedErrors_0.7.svg)](http://pkg.julialang.org/?pkg=GroupedErrors)
 
 This package provides some macros to simplify the analysis and visualization of grouped data.
 It is based on the [IterableTables](https://github.com/davidanthoff/IterableTables.jl) framework (but uses [IndexedTables](https://github.com/JuliaComputing/IndexedTables.jl) internally) and can interface with [Plots.jl](https://github.com/JuliaPlots/Plots.jl) for easy plotting.
