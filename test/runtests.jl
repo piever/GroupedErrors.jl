@@ -19,7 +19,7 @@ for i in 1:length(tables)
     println(i)
     test_table = tables[i]
     println(test_table)
-    stored_table = loadtable(joinpath(@__DIR__, "tables", "t$i.csv"))
+    stored_table = loadtable(GroupedErrors.exampletable("t$i.csv"))
     println(stored_table)
     atol = i == 8 ? 1e-1 : 1e-4
     check_equality(stored_table, test_table, atol)

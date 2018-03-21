@@ -21,5 +21,8 @@ include("plot_macro.jl")
 include("pipeline.jl")
 include("analysisfunctions.jl")
 
+exampletable() = joinpath(dirname(@__DIR__), "test", "tables")
+exampletable(s) = joinpath(exampletable(), s)
+
 
 end

@@ -1,4 +1,4 @@
-school = loadtable(joinpath(@__DIR__, "tables", "school.csv"))
+school = GroupedErrors.exampletable("school.csv") |> loadtable
 tables = []
 
 #Test scatter plot
