@@ -146,6 +146,7 @@ function _y(s::ColumnSelector, f, args...; kwargs...)
 		s2 = replace_selector(s, f, :y)
 		s2.kw[:f] = :locreg
 		s2.kw[:axis_type] = get(s2.kw, :axis_type, :pointbypoint)
+        s2.kw[:axis_type] == :auto && (s2.kw[:axis_type] = :pointbypoint)
 		(length(args) > 0) && (s2.kw[:yreduce] = functionize(args[1]))
     end
     s2.kw[:fkwargs] = store_kws(; kwargs...)
