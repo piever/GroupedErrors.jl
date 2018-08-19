@@ -1,13 +1,12 @@
 abstract type AbstractSelector; end
 
-struct ColumnSelector{T, S1<:Union{Symbol, Vector{Symbol}}, S2<:Union{Symbol, Void},
-    S3<:Union{Symbol, Void}, S4<:Union{Symbol, Void}, S5<:Union{Symbol, Void}} <: AbstractSelector
+struct ColumnSelector{T}
     table::T
-    splitby::S1
-    compare::S2
-    across::S3
-    x::S4
-    y::S5
+    splitby
+    compare
+    across
+    x
+    y
     kw::Dict{Symbol, Any}
 end
 
