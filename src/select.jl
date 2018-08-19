@@ -1,6 +1,6 @@
 abstract type AbstractSelector; end
 
-struct ColumnSelector{T}
+struct ColumnSelector{T} <: AbstractSelector
     table::T
     splitby
     compare
