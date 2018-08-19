@@ -1,13 +1,12 @@
 abstract type AbstractSelector; end
 
-struct ColumnSelector{T, S1<:Union{Symbol, Vector{Symbol}}, S2<:Union{Symbol, Void},
-    S3<:Union{Symbol, Void}, S4<:Union{Symbol, Void}, S5<:Union{Symbol, Void}} <: AbstractSelector
+struct ColumnSelector{T} <: AbstractSelector
     table::T
-    splitby::S1
-    compare::S2
-    across::S3
-    x::S4
-    y::S5
+    splitby
+    compare
+    across
+    x
+    y
     kw::Dict{Symbol, Any}
 end
 
@@ -76,10 +75,11 @@ function Table2Process(s::ColumnSelector)
     end
     across_col = s.across == nothing ? fill(0.0, getlength(s.table)) : getcolumn(s.table, s.across)
     y_col = s.y == nothing? fill(NaN, getlength(s.table)) : getcolumn(s.table, s.y)
+    x = isa(s.x, Symbol) ? getcolumn(s.table, s.x) : fill(s.x, getlength(s.table))
     if s.compare == nothing
-        columns = tuple(splitter..., across_col, getcolumn(s.table, s.x), y_col)
+        columns = tuple(splitter..., across_col, x, y_col)
     else
-        columns = tuple(splitter..., getcolumn.(s.table, s.compare), across_col, getcolumn(s.table, s.x), y_col)
+        columns = tuple(splitter..., getcolumn.(s.table, s.compare), across_col, x, y_col)
     end
     Table2Process(columns, s.kw)
 end
