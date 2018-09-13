@@ -126,7 +126,7 @@ end
 
 function _y(s::Selector, f, args...; kwargs...)
     if isa(f, Symbol)
-        s2 = s
+        s2 = f == :custom && length(args)>1 ? replace_selector(s, args[2], :y) : s
 		s2.kw[:f] = f == :custom ? args[1] : f
     else
         s2 = replace_selector(s, f, :y)
