@@ -90,10 +90,10 @@ end
 
 _isfinite(t) = true
 _isfinite(t::Number) = isfinite(t)
-_isfinite(t::Union{Tuple, NamedTuple}) = all(_isfinite.(t))
+_isfinite(t::Union{Tuple, NamedTuple}) = all(_isfinite, t)
 
 function _group_apply(t::Table2Process)
-    n = eltype(t.table).parameters.length-3
+    n = length(columns(t.table))-3
     if t.kw[:axis_type] == :pointbypoint
         if (t.kw[:xreduce] == false) || (t.kw[:yreduce] == false)
             t.kw[:compare] && error("can't compare without xreduce and yreduce")

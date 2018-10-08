@@ -1,6 +1,7 @@
 __precompile__()
 module GroupedErrors
 
+using Statistics
 import Loess, KernelDensity, IterableTables
 import DataValues: DataValue
 import Lazy: @>

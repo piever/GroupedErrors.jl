@@ -3,10 +3,11 @@ using Test
 using IndexedTables
 using ShiftedArrays
 using TextParse
+using Statistics
 
 function loadtable(path)
     cols, names = TextParse.csvread(path)
-    table(cols...; names = names)
+    table(cols...; names = Symbol.(names))
 end
 
 function check_equality(stored_table, test_table, atol)
