@@ -1,7 +1,13 @@
 using GroupedErrors
 using Base.Test
-using JuliaDB, IndexedTables
+using IndexedTables
 using ShiftedArrays
+using TextParse
+
+function loadtable(path)
+    cols, names = TextParse.csvread(path)
+    table(cols...; names = names)
+end
 
 function check_equality(stored_table, test_table, atol)
     for j in colnames(stored_table)
@@ -82,7 +88,7 @@ res = @> t begin
     @y _.y
     ProcessedTable
 end
-expected_res = table(@NT(s1 = fill("y1", 3), x = -1:1, y = [4., 5., 6.], err = fill(2., 3)),
+expected_res = table((s1 = fill("y1", 3), x = -1:1, y = [4., 5., 6.], err = fill(2., 3)),
     pkey = :s1)
 
 check_equality(expected_res, res.table, 1e-8)
