@@ -1,7 +1,7 @@
 julia 0.7
 
 StatsBase
-KernelDensity
+KernelDensity 0.5.1
 Loess
 IndexedTables 0.4.1
 IterableTables 0.5.1
