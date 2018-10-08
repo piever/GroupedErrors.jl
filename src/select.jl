@@ -45,7 +45,7 @@ _get(t::DataValue) = get(t)
 _nafree_tup(t::Tuple) = all(_nafree, t)
 
 _nafree(t) = true
-_nafree(t::DataValue) = !isnull(t)
+_nafree(t::DataValue) = !isna(t)
 
 function Table2Process(s::Selector)
     enumerable = TableTraits.getiterator(s.table)
@@ -71,15 +71,15 @@ function Table2Process(s::ColumnSelector)
     elseif isa(s.splitby, Symbol)
         splitter = [getcolumn(s.table, s.splitby)]
     else
-        splitter = getcolumn.(s.table, s.splitby)
+        splitter = map(t -> getcolumn(s.table, t), s.splitby)
     end
     across_col = s.across == nothing ? fill(0.0, getlength(s.table)) : getcolumn(s.table, s.across)
-    y_col = s.y == nothing? fill(NaN, getlength(s.table)) : getcolumn(s.table, s.y)
+    y_col = s.y == nothing ? fill(NaN, getlength(s.table)) : getcolumn(s.table, s.y)
     x = isa(s.x, Symbol) ? getcolumn(s.table, s.x) : fill(s.x, getlength(s.table))
     if s.compare == nothing
         columns = tuple(splitter..., across_col, x, y_col)
     else
-        columns = tuple(splitter..., getcolumn.(s.table, s.compare), across_col, x, y_col)
+        columns = tuple(splitter..., getcolumn(s.table, s.compare), across_col, x, y_col)
     end
     Table2Process(columns, s.kw)
 end

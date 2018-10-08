@@ -1,7 +1,15 @@
 using GroupedErrors
-using Base.Test
-using JuliaDB, IndexedTables
+using Test
+using IndexedTables
 using ShiftedArrays
+using TextParse
+using Statistics
+import Lazy
+
+function loadtable(path)
+    cols, names = TextParse.csvread(path)
+    table(cols...; names = Symbol.(names))
+end
 
 function check_equality(stored_table, test_table, atol)
     for j in colnames(stored_table)
@@ -21,7 +29,7 @@ for i in 1:length(tables)
     println(test_table)
     stored_table = loadtable(GroupedErrors.exampletable("t$i.csv"))
     println(stored_table)
-    atol = i == 8 ? 1e-1 : 1e-4
+    atol = i == 8 ? 1e-1 : 2e-3
     check_equality(stored_table, test_table, atol)
 end
 
@@ -34,10 +42,10 @@ processed_table = @> school begin
     ProcessedTable
 end
 
-processed_table_col = @> GroupedErrors.ColumnSelector(school) begin
-    GroupedErrors._splitby(split_vars)
-    GroupedErrors._x(:MAch, :continuous)
-    GroupedErrors._y(:locreg, :SSS)
+processed_table_col = Lazy.@as x GroupedErrors.ColumnSelector(school) begin
+    GroupedErrors._splitby(x, split_vars)
+    GroupedErrors._x(x, :MAch, :continuous)
+    GroupedErrors._y(x, :locreg, :SSS)
     ProcessedTable
 end
 
@@ -82,7 +90,24 @@ res = @> t begin
     @y _.y
     ProcessedTable
 end
-expected_res = table(@NT(s1 = fill("y1", 3), x = -1:1, y = [4., 5., 6.], err = fill(2., 3)),
+expected_res = table((s1 = fill("y1", 3), x = -1:1, y = [4., 5., 6.], err = fill(2., 3)),
     pkey = :s1)
 
 check_equality(expected_res, res.table, 1e-8)
+
+cs = Lazy.@as x GroupedErrors.ColumnSelector(school) begin
+    GroupedErrors._across(x, :School)
+    GroupedErrors._x(x, :MAch)
+    GroupedErrors._y(x, :MAch)
+    GroupedErrors._compare(x, :Sx)
+    ProcessedTable(x)
+end
+
+s = @> school begin
+    @across _.School
+    @xy _.MAch
+    @compare _.Sx
+    ProcessedTable
+end
+
+check_equality(cs.table, s.table, 1e-8)
