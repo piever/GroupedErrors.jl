@@ -34,7 +34,8 @@ function plot_helper(t::ProcessedTable, f::Function, err_style, args...; kwargs.
         x, y = columns(s, :x), columns(s, :y)
         err = :err in colnames(s) ? columns(s, :err) : nothing
         (axis_type == :continuous) && (err_style = :ribbon)
-        f(args..., x, y; group = group, (err_style, err), kwargs..., plot_kwargs...)
+        kw_itr = Iterators.flatten([[(err_style, err)], kwargs, plot_kwargs])
+        f(args..., x, y; group = group, kw_itr...)
     end
 end
 

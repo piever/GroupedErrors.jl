@@ -10,7 +10,7 @@ end
 ##### List of functions to analyze data
 
 """
-    `_locreg(df, xaxis::Range, x, y; kwargs...)`
+    `_locreg(df, xaxis::AbstractRange, x, y; kwargs...)`
 
 Apply loess regression, training the regressor with `x` and `y` and
 predicting `xaxis`
@@ -66,8 +66,12 @@ function _density(::Val{:discrete}, xaxis, t; normalize = true)
 end
 
 _density_axis(column, axis_type::Symbol; kwargs...) =
-    (axis_type == :discrete) ? get_axis(column) :
-    (start, stop = extrema(KernelDensity.kde(column; kwargs...).x); range(start, stop = stop, length = 100))
+    if (axis_type == :discrete)
+        get_axis(column)
+    else
+        start, stop = extrema(KernelDensity.kde(column; kwargs...).x)
+        range(start, stop = stop, length = 100)
+    end
 
 """
     `_cumulative!(df, xaxis, x) = ecdf(df[x])(xaxis)`
@@ -94,9 +98,12 @@ end
 
 #### Method to compute and plot grouped error plots using the above functions
 
-get_axis(column::AbstractArray{<:Range}) = column[1]
+get_axis(column::AbstractArray{<:AbstractRange}) = column[1]
 get_axis(column) = sort!(union(column))
-get_axis(column, npoints::Int64) = (start, stop = extrema(column); range(start, stop = stop, length = npoints))
+function get_axis(column, npoints::Int64)
+    start, stop = extrema(column)
+    range(start, stop = stop, length = npoints)
+end
 
 function get_axis(column, axis_type::Symbol, compute_axis::Symbol; kwargs...)
     if axis_type == :discrete
