@@ -30,7 +30,7 @@ end
 _splitby(s::AbstractSelector, f) = replace_selector(s, f, :splitby)
 
 macro across(s, arg)
-    p = (arg == Expr(:quote, :all)) ? Expr(:quote, :all) :
+    p = (arg == QuoteNode(:all)) ? QuoteNode(:all) :
         helper_replace_anon_func_syntax(arg)
     Expr(:call, :_across, esc(s), esc(p))
 end

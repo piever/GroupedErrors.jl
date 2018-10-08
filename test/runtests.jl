@@ -28,7 +28,7 @@ for i in 1:length(tables)
     println(test_table)
     stored_table = loadtable(GroupedErrors.exampletable("t$i.csv"))
     println(stored_table)
-    atol = i == 8 ? 1e-1 : 1e-4
+    atol = i == 8 ? 1e-1 : 2e-3
     check_equality(stored_table, test_table, atol)
 end
 
