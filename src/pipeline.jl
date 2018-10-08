@@ -35,7 +35,8 @@ function process_axis_type!(cols, kw)
     bin_width = 1.0
     if kw[:axis_type] == :binned
         nbins = get(kw, :nbins, 30)
-        edges = linspace(extrema(x)..., nbins+1)
+        start, stop = extrema(x)
+        edges = range(start, stop = stop, length = nbins+1)
         middles = (edges[2:end] .+ edges[1:end-1])./2
         indices = [searchsortedfirst(edges[2:end], s) for s in x]
         x_binned = middles[indices]
