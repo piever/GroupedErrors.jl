@@ -4,6 +4,7 @@ using IndexedTables
 using ShiftedArrays
 using TextParse
 using Statistics
+import Lazy
 
 function loadtable(path)
     cols, names = TextParse.csvread(path)
@@ -41,10 +42,10 @@ processed_table = @> school begin
     ProcessedTable
 end
 
-processed_table_col = @> GroupedErrors.ColumnSelector(school) begin
-    GroupedErrors._splitby(split_vars)
-    GroupedErrors._x(:MAch, :continuous)
-    GroupedErrors._y(:locreg, :SSS)
+processed_table_col = Lazy.@as x GroupedErrors.ColumnSelector(school) begin
+    GroupedErrors._splitby(x, split_vars)
+    GroupedErrors._x(x, :MAch, :continuous)
+    GroupedErrors._y(x, :locreg, :SSS)
     ProcessedTable
 end
 

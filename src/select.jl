@@ -71,7 +71,7 @@ function Table2Process(s::ColumnSelector)
     elseif isa(s.splitby, Symbol)
         splitter = [getcolumn(s.table, s.splitby)]
     else
-        splitter = getcolumn.(s.table, s.splitby)
+        splitter = map(t -> getcolumn(s.table, t), s.splitby)
     end
     across_col = s.across == nothing ? fill(0.0, getlength(s.table)) : getcolumn(s.table, s.across)
     y_col = s.y == nothing ? fill(NaN, getlength(s.table)) : getcolumn(s.table, s.y)

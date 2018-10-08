@@ -3,7 +3,7 @@ module GroupedErrors
 
 using Statistics
 import Loess, KernelDensity, IterableTables
-import DataValues: DataValue
+import DataValues: DataValue, isna
 import Lazy: @>
 using IndexedTables
 using TableTraits
