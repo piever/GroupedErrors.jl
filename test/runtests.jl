@@ -94,3 +94,20 @@ expected_res = table((s1 = fill("y1", 3), x = -1:1, y = [4., 5., 6.], err = fill
     pkey = :s1)
 
 check_equality(expected_res, res.table, 1e-8)
+
+cs = Lazy.@as x GroupedErrors.ColumnSelector(school) begin
+    GroupedErrors._across(x, :School)
+    GroupedErrors._x(x, :MAch)
+    GroupedErrors._y(x, :MAch)
+    GroupedErrors._compare(x, :Sx)
+    ProcessedTable(x)
+end
+
+s = @> school begin
+    @across _.School
+    @xy _.MAch
+    @compare _.Sx
+    ProcessedTable
+end
+
+check_equality(cs.table, s.table, 1e-8)

@@ -79,7 +79,7 @@ function Table2Process(s::ColumnSelector)
     if s.compare == nothing
         columns = tuple(splitter..., across_col, x, y_col)
     else
-        columns = tuple(splitter..., getcolumn.(s.table, s.compare), across_col, x, y_col)
+        columns = tuple(splitter..., getcolumn(s.table, s.compare), across_col, x, y_col)
     end
     Table2Process(columns, s.kw)
 end
