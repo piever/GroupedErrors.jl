@@ -111,7 +111,7 @@ function _group_apply(t::Table2Process)
                 lselect = :x, rselect = :y)
         end
     else
-        g = groupby(t.table, (listsplits(t)...), select = (:across, :x, :y), flatten = true) do tt
+        g = groupby(t.table, (listsplits(t)...,), select = (:across, :x, :y), flatten = true) do tt
             split_table = table(tt, pkey = :across, presorted = true)
             xaxis = get_axis(columns(split_table, :x), t.kw[:axis_type], t.kw[:compute_axis])
             get_grouped_error(t.kw[:summarize]..., t.kw[:fclosure], xaxis, split_table, t.kw[:compute_error])
