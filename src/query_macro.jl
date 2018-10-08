@@ -17,7 +17,7 @@ function helper_replace_anon_func_syntax(ex)
 end
 
 function replace_selector(s::S, f, sym::Symbol) where {S<:AbstractSelector}
-    fields = fieldnames(s)
+    fields = fieldnames(S)
     new_fields = Tuple(field == sym ? f : getfield(s, field) for field in fields)
 	(S <: Selector) ? Selector(new_fields...) : ColumnSelector(new_fields...)
 end

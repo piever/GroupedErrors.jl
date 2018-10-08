@@ -1,5 +1,5 @@
 using GroupedErrors
-using Base.Test
+using Test
 using IndexedTables
 using ShiftedArrays
 using TextParse
