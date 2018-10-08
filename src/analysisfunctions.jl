@@ -36,7 +36,7 @@ a given value of `x` using the function `estimator` (default is mean)
 function _locreg(::Val{:discrete}, xaxis, t; estimator = mean)
     if column(t, :y)[1] isa ShiftedArray
         v = reduce_vec(estimator, column(t, :y), xaxis, filter = !isnan)
-        inds = find(!ismissing, v)
+        inds = findall(!ismissing, v)
         table(xaxis[inds], convert(Vector{Float64}, view(v, inds)), names = [:x, :y],
             copy = false, presorted = true)
     else
@@ -45,7 +45,7 @@ function _locreg(::Val{:discrete}, xaxis, t; estimator = mean)
 end
 
 """
-    `_density(df,xaxis::Range, x; kwargs...)`
+    `_density(df,xaxis::AbstractRange, x; kwargs...)`
 
 Kernel density of `x`, computed along `xaxis`
 """
@@ -67,7 +67,7 @@ end
 
 _density_axis(column, axis_type::Symbol; kwargs...) =
     (axis_type == :discrete) ? get_axis(column) :
-    linspace(extrema(KernelDensity.kde(column; kwargs...).x)..., 100)
+    (start, stop = extrema(KernelDensity.kde(column; kwargs...).x); range(start, stop = stop, length = 100))
 
 """
     `_cumulative!(df, xaxis, x) = ecdf(df[x])(xaxis)`
@@ -96,7 +96,7 @@ end
 
 get_axis(column::AbstractArray{<:Range}) = column[1]
 get_axis(column) = sort!(union(column))
-get_axis(column, npoints::Int64) = linspace(extrema(column)..., npoints)
+get_axis(column, npoints::Int64) = (start, stop = extrema(column); range(start, stop = stop, length = npoints))
 
 function get_axis(column, axis_type::Symbol, compute_axis::Symbol; kwargs...)
     if axis_type == :discrete
