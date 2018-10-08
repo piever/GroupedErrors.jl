@@ -45,7 +45,7 @@ _get(t::DataValue) = get(t)
 _nafree_tup(t::Tuple) = all(_nafree, t)
 
 _nafree(t) = true
-_nafree(t::DataValue) = !isnull(t)
+_nafree(t::DataValue) = !isna(t)
 
 function Table2Process(s::Selector)
     enumerable = TableTraits.getiterator(s.table)
