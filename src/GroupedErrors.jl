@@ -6,6 +6,7 @@ import Loess, KernelDensity, IterableTables
 import DataValues: DataValue, isna
 import Lazy: @>
 using IndexedTables
+import IndexedTables: select
 using TableTraits
 using MacroTools
 using StatsBase
