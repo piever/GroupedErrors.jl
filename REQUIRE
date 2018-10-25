@@ -8,6 +8,6 @@ IterableTables 0.5.1
 TableTraitsUtils 0.1.0
 TableTraits
 MacroTools
-Lazy
+Lazy 0.13.2
 ShiftedArrays 0.3.0
 DataValues
