@@ -12,7 +12,7 @@ function plot_helper(t::ProcessedTable, f::Function, err_style, args...; kwargs.
     s = t.table
     axis_type = t.kw[:axis_type]
     group = Tuple(columns(t.table, s) for s in listsplits(t))
-    group_list = unique(Columns(group...))
+    group_list = unique(Columns(group))
     plot_kwargs = [(plot_kwarg[1], reshape(plot_kwarg[2].(group_list), 1, :))
         for plot_kwarg in t.kw[:plot_kwargs]]
     if axis_type == :pointbypoint
