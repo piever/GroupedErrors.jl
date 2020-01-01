@@ -3,6 +3,8 @@
 [![Build Status](https://travis-ci.org/piever/GroupedErrors.jl.svg?branch=master)](https://travis-ci.org/piever/GroupedErrors.jl)
 [![codecov.io](http://codecov.io/github/piever/GroupedErrors.jl/coverage.svg?branch=master)](http://codecov.io/github/piever/GroupedErrors.jl?branch=master)
 
+**This package is no longer maintained. See [Recombinase](https://github.com/piever/Recombinase.jl) for a maintained package offering similar functionality.**
+
 This package provides some macros to simplify the analysis and visualization of grouped data.
 It is based on the [IterableTables](https://github.com/davidanthoff/IterableTables.jl) framework (but uses [IndexedTables](https://github.com/JuliaComputing/IndexedTables.jl) internally) and can interface with [Plots.jl](https://github.com/JuliaPlots/Plots.jl) for easy plotting.
 
